@@ -146,6 +146,7 @@ function updateKartChildPositions() {
 function updateKartWheelFrames() {
     for (let i = 1; i <= 4; i++) {
         const wheelGroup = kartGroup.children[i];
+        wheelGroup.rotation.y -= 0.01
         changeWheelSpriteBasedOnCamera(wheelGroup)
     }
 }
@@ -153,17 +154,19 @@ function updateKartWheelFrames() {
 function updateTestingWheelFrames() {
     for (let i = 0; i < testingGroup.children.length; i++) {
         const wheelGroup = testingGroup.children[i];
+        wheelGroup.rotation.y += 0.01
         changeWheelSpriteBasedOnCamera(wheelGroup)
     }
 }
 
 function changeWheelSpriteBasedOnCamera(wheelGroup) {
-    const wheelSprite = wheelGroup.children[0]
-    const wheelText = wheelGroup.children[3]
-
     // Calculate the angle between the camera's position and the wheel's position
-    const relativePosition = wheelGroup.position.clone().sub(camera.position.clone());
-    const angleToCamera = Math.atan2(relativePosition.z, relativePosition.x);
+    const relativePosition = wheelGroup.position.clone().sub(camera.position);
+
+    // Apply the inverse of the parent group's rotation to the relative position
+    const rotatedRelativePosition = relativePosition.applyAxisAngle(new THREE.Vector3(0, 1, 0), -wheelGroup.rotation.y);
+
+    const angleToCamera = Math.atan2(rotatedRelativePosition.z, rotatedRelativePosition.x);
 
     // Calculate the frame index based on the angle between the camera and the wheel
     let frameIndex;
@@ -187,15 +190,13 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
     // Ensure frameIndex stays within valid range
     frameIndex = (frameIndex + wheelFramesPerColumn) % wheelFramesPerColumn;
 
-    wheelText.text = `${angleToCamera.toFixed(2)}\n${normalizedAngle.toFixed(2)}\n${frameIndex}\n${mirror}`
-
     // Update the frame for the current wheel
-    setSpriteFrame(wheelSprite, frameIndex, mirror);
+    setSpriteFrame(wheelGroup.children[0], frameIndex, mirror);
 }
 
 const testingGroup = new THREE.Group()
 function createTestingGroup() {
-    const numWheels = 25; // Number of wheels in the circle
+    const numWheels = 10; // Number of wheels in the circle
     const radius = 2.5; // Radius of the circle
     const angleIncrement = (2 * Math.PI) / numWheels; // Angle between each wheel
 
