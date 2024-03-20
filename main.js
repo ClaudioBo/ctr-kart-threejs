@@ -1,5 +1,6 @@
 // Import Three.js
 import * as THREE from 'three';
+import SpriteText from 'three-spritetext';
 
 const debugText = document.getElementById('debugText');
 
@@ -18,31 +19,80 @@ const kartGroup = new THREE.Group()
 const createKart = () => {
     const mainKartMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
     const mainKartWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
-    const geometry = new THREE.BoxGeometry(2, 0.25, 1);
-    const mainKart = new THREE.Mesh(geometry, mainKartMaterial);
-    const mainKartWireframe = new THREE.Mesh(geometry, mainKartWireframeMaterial);
-    mainKart.add(mainKartWireframe);
-    kartGroup.add(mainKart); // Add mainKart to the group
+    // const mainKartGeometry = new THREE.BoxGeometry(2, 0.1, 1);
+    const mainKartGeometry = new THREE.BoxGeometry(2, 0.25, 1);
+    const mainKartMesh = new THREE.Mesh(mainKartGeometry, mainKartMaterial);
+    const mainKartWireframe = new THREE.Mesh(mainKartGeometry, mainKartWireframeMaterial);
+    mainKartMesh.add(mainKartWireframe);
+    kartGroup.add(mainKartMesh); // Add mainKart to the group
+    kartGroup.position.y = -0.5
 }
 createKart()
 
-// Set frame properties
-const kartFramesPerColumn = 15;
-const kartFrameWidth = 32;
-const kartFrameHeight = 32;
-const kartTextureWidth = 480;
-const kartTextureHeight = 32;
+// Create a template group that would store a Sprite and DebugSquare
+const createWheel = () => {
+
+    const axisHelper = new THREE.AxesHelper(0.5); // Specify the size of the axes (optional)
+
+    // Debug square material
+    const debugSquareGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const debugSquareMaterial = new THREE.MeshBasicMaterial({ color: 0x555555, wireframe: true });
+
+    // Wheel material
+    const wheelSpriteTexture = new THREE.TextureLoader().load('wheel_sprite_sheet.png');
+    wheelSpriteTexture.magFilter = THREE.NearestFilter; // Set magnification filter
+    wheelSpriteTexture.minFilter = THREE.NearestFilter; // Set minification filter
+    const wheelSpriteMaterial = new THREE.SpriteMaterial({ map: wheelSpriteTexture });
+
+    // Wheel group
+    const wheelGroup = new THREE.Group()
+
+    const wheelSprite = new THREE.Sprite(wheelSpriteMaterial);
+    wheelSprite.scale.set(0.5, 0.5, 1); // Scale down the sprite
+
+    // Debug wireframe
+    const debugSquareMesh = new THREE.Mesh(debugSquareGeometry, debugSquareMaterial);
+
+    // Debug text
+    const textSprite = new SpriteText('#');
+    textSprite.textHeight = 0.15
+
+    wheelGroup.add(wheelSprite)
+    wheelGroup.add(debugSquareMesh)
+    wheelGroup.add(axisHelper)
+    wheelGroup.add(textSprite)
+
+    return wheelGroup
+}
+
+// Create 4 kart's wheels
+const createKartWheels = () => {
+    for (let i = 0; i < 4; i++) {
+        kartGroup.add(createWheel())
+    }
+}
+createKartWheels()
+
+// Add the group to the scene
+scene.add(kartGroup);
+
+// Spritesheet properties
+const wheelFramesPerColumn = 15;
+const wheelFrameWidth = 32;
+const wheelFrameHeight = 32;
+const wheelTextureWidth = 480;
+const wheelTextureHeight = 32;
 
 // Function to set sprite frame
 function setSpriteFrame(sprite, frameIndex, mirror = false) {
-    const x = (frameIndex % kartFramesPerColumn) * kartFrameWidth;
-    const y = Math.floor(frameIndex / kartFramesPerColumn) * kartFrameHeight;
+    const x = (frameIndex % wheelFramesPerColumn) * wheelFrameWidth;
+    const y = Math.floor(frameIndex / wheelFramesPerColumn) * wheelFrameHeight;
 
     // Calculate texture offsets and repeats
-    const offsetX = x / kartTextureWidth;
-    const offsetY = 1 - (y + kartFrameHeight) / kartTextureHeight;
-    const repeatX = kartFrameWidth / kartTextureWidth;
-    const repeatY = kartFrameHeight / kartTextureHeight;
+    const offsetX = x / wheelTextureWidth;
+    const offsetY = 1 - (y + wheelFrameHeight) / wheelTextureHeight;
+    const repeatX = wheelFrameWidth / wheelTextureWidth;
+    const repeatY = wheelFrameHeight / wheelTextureHeight;
 
     // Set texture coordinates
     sprite.material.map.offset.set(offsetX, offsetY);
@@ -55,43 +105,13 @@ function setSpriteFrame(sprite, frameIndex, mirror = false) {
     }
 }
 
-// Create wheels
-const createWheels = () => {
-    const wheelSpriteTexture = new THREE.TextureLoader().load('wheel_sprite_sheet.png');
-    wheelSpriteTexture.magFilter = THREE.NearestFilter; // Set magnification filter
-    wheelSpriteTexture.minFilter = THREE.NearestFilter; // Set minification filter
-    const wheelSpriteMaterial = new THREE.SpriteMaterial({ map: wheelSpriteTexture });
-
-    for (let i = 0; i < 4; i++) {
-        // Create sprite
-        const wheel = new THREE.Sprite(wheelSpriteMaterial.clone()); // Clone the material to avoid shared material properties
-        wheel.scale.set(0.5, 0.5, 1); // Scale down the sprite
-        kartGroup.add(wheel);
-    }
-}
-createWheels();
-
-// Function to create squares
-const createSquares = () => {
-    const squareGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-    const squareWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
-    for (let i = 0; i < 4; i++) {
-        const square = new THREE.Mesh(squareGeometry, squareWireframeMaterial);
-        kartGroup.add(square); // Add square to the group
-    }
-}
-createSquares()
-
-// Add the group to the scene
-scene.add(kartGroup);
-
-function updateChildPositions() {
+function updateKartChildPositions() {
     // Update position and rotation for the main kart
     const mainKart = kartGroup.children[0];
 
-    // Calculate the positions of wheels and squares relative to the main kart's local space
+    // Calculate the positions of wheel group relative to the main kart's local space
     const offsetX = 0.74;
-    const offsetY = -0.25;
+    const offsetY = 0;
     const offsetZ = 0.65;
     const wheelLocalPositions = [
         new THREE.Vector3(-offsetX, offsetY, -offsetZ),
@@ -100,10 +120,9 @@ function updateChildPositions() {
         new THREE.Vector3(offsetX, offsetY, offsetZ),
     ];
 
-    // Update positions and rotations for the wheels and squares
+    // Update positions and rotations for the wheel group
     for (let i = 1; i <= 4; i++) {
-        const wheel = kartGroup.children[i];
-        const square = kartGroup.children[i + 4];
+        const wheelGroup = kartGroup.children[i]
 
         const wheelLocalPosition = wheelLocalPositions[i - 1];
 
@@ -114,54 +133,94 @@ function updateChildPositions() {
         const wheelPosition = mainKart.position.clone().add(rotatedWheelLocalPosition);
 
         // Set positions
-        wheel.position.copy(wheelPosition);
-        square.position.copy(wheelPosition); // Assuming square positions are the same as wheel positions
-        if(i==4){
-            wheel.position.y+=1
-        }
+        wheelGroup.position.copy(wheelPosition);
+        // if (i == 4) {
+        //     wheelGroup.position.y += 0.2
+        // }
     }
 }
 
 // Function to update the frame for each wheel based on the camera's view
-function updateWheelFrames() {
+
+
+function updateKartWheelFrames() {
     for (let i = 1; i <= 4; i++) {
-        const wheel = kartGroup.children[i];
-
-        // Calculate the angle between the camera's position and the wheel's position
-        const relativePosition = wheel.position.clone().sub(camera.position);
-        const angleToCamera = Math.atan2(relativePosition.z, relativePosition.x);
-
-        // Calculate the frame index based on the angle between the camera and the wheel
-        let frameIndex;
-        let mirror = false;
-        const normalizedAngle = ((angleToCamera % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
-
-        if (normalizedAngle <= Math.PI / 2) {
-            frameIndex = Math.floor((normalizedAngle / (Math.PI / 2)) * kartFramesPerColumn);
-            mirror = true;
-        } else if (normalizedAngle <= Math.PI) {
-            const mirroredAngle = Math.PI - normalizedAngle;
-            frameIndex = Math.floor((mirroredAngle / (Math.PI / 2)) * kartFramesPerColumn);
-        } else if (normalizedAngle <= Math.PI * 1.5) {
-            mirror = true;
-            const mirroredAngle = normalizedAngle - Math.PI;
-            frameIndex = Math.floor((mirroredAngle / (Math.PI / 2)) * kartFramesPerColumn);
-        } else {
-            frameIndex = Math.floor(((Math.PI * 2 - normalizedAngle) / (Math.PI / 2)) * kartFramesPerColumn);
-        }
-
-        // Ensure frameIndex stays within valid range
-        frameIndex = (frameIndex + kartFramesPerColumn) % kartFramesPerColumn;
-
-        // Update the frame for the current wheel
-        setSpriteFrame(wheel, frameIndex, mirror);
+        const wheelGroup = kartGroup.children[i];
+        changeWheelSpriteBasedOnCamera(wheelGroup)
     }
 }
+
+function updateTestingWheelFrames() {
+    for (let i = 0; i < testingGroup.children.length; i++) {
+        const wheelGroup = testingGroup.children[i];
+        changeWheelSpriteBasedOnCamera(wheelGroup)
+    }
+}
+
+function changeWheelSpriteBasedOnCamera(wheelGroup) {
+    const wheelSprite = wheelGroup.children[0]
+    const wheelText = wheelGroup.children[3]
+
+    // Calculate the angle between the camera's position and the wheel's position
+    const relativePosition = wheelGroup.position.clone().sub(camera.position.clone());
+    const angleToCamera = Math.atan2(relativePosition.z, relativePosition.x);
+
+    // Calculate the frame index based on the angle between the camera and the wheel
+    let frameIndex;
+    let mirror = false;
+    const normalizedAngle = ((angleToCamera % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+
+    if (normalizedAngle <= Math.PI / 2) {
+        frameIndex = Math.floor((normalizedAngle / (Math.PI / 2)) * wheelFramesPerColumn);
+        mirror = true;
+    } else if (normalizedAngle <= Math.PI) {
+        const mirroredAngle = Math.PI - normalizedAngle;
+        frameIndex = Math.floor((mirroredAngle / (Math.PI / 2)) * wheelFramesPerColumn);
+    } else if (normalizedAngle <= Math.PI * 1.5) {
+        mirror = true;
+        const mirroredAngle = normalizedAngle - Math.PI;
+        frameIndex = Math.floor((mirroredAngle / (Math.PI / 2)) * wheelFramesPerColumn);
+    } else {
+        frameIndex = Math.floor(((Math.PI * 2 - normalizedAngle) / (Math.PI / 2)) * wheelFramesPerColumn);
+    }
+
+    // Ensure frameIndex stays within valid range
+    frameIndex = (frameIndex + wheelFramesPerColumn) % wheelFramesPerColumn;
+
+    wheelText.text = `${angleToCamera.toFixed(2)}\n${normalizedAngle.toFixed(2)}\n${frameIndex}\n${mirror}`
+
+    // Update the frame for the current wheel
+    setSpriteFrame(wheelSprite, frameIndex, mirror);
+}
+
+const testingGroup = new THREE.Group()
+function createTestingGroup() {
+    const numWheels = 25; // Number of wheels in the circle
+    const radius = 2.5; // Radius of the circle
+    const angleIncrement = (2 * Math.PI) / numWheels; // Angle between each wheel
+
+    for (let i = 0; i < numWheels; i++) {
+        // Calculate position of the wheel along the circumference of the circle
+        const angle = i * angleIncrement;
+        const x = kartGroup.position.x + radius * Math.cos(angle);
+        const z = kartGroup.position.z + radius * Math.sin(angle);
+
+        // Create and position the wheel
+        const wheel = createWheel();
+        wheel.position.set(x, 0, z);
+        testingGroup.add(wheel);
+    }
+}
+
+createTestingGroup()
+
+scene.add(testingGroup)
+
 
 // Function to update camera position and rotation
 function updateCamera() {
     const radius = 2; // Distance of the camera from the kart
-    const cameraRotationSpeed = 0.001; // Speed of camera rotation
+    const cameraRotationSpeed = 0.0001; // Speed of camera rotation
 
     // Calculate new angle for the camera
     const cameraAngle = Date.now() * cameraRotationSpeed;
@@ -179,23 +238,16 @@ function updateCamera() {
 
 // Function to animate the scene
 function animate() {
-    // Rotate the rectangle
     // kartGroup.rotation.x += 0.003;
     // kartGroup.rotation.y -= 0.003;
 
-    // Update the camera position and rotation
     updateCamera();
 
-    // Self-explainatory
-    updateChildPositions()
+    updateKartChildPositions()
+    updateTestingWheelFrames()
+    updateKartWheelFrames()
 
-    // Self-explainatory
-    updateWheelFrames()
-
-    // Render the scene
     renderer.render(scene, camera);
-
-    // Loop
     requestAnimationFrame(animate);
 }
 
