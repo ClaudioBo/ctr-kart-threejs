@@ -33,9 +33,6 @@ const kartFrameHeight = 32;
 const kartTextureWidth = 480;
 const kartTextureHeight = 32;
 
-// const kartFramesPerColumn = 13;
-// const kartTextureWidth = 1056;
-
 // Function to set sprite frame
 function setSpriteFrame(sprite, frameIndex, mirror = false) {
     const x = (frameIndex % kartFramesPerColumn) * kartFrameWidth;
@@ -95,7 +92,7 @@ function updateChildPositions() {
     // Calculate the positions of wheels and squares relative to the main kart's local space
     const offsetX = 0.74;
     const offsetY = -0.25;
-    const offsetZ = 3.65;
+    const offsetZ = 0.65;
     const wheelLocalPositions = [
         new THREE.Vector3(-offsetX, offsetY, -offsetZ),
         new THREE.Vector3(offsetX, offsetY, -offsetZ),
@@ -163,7 +160,7 @@ function updateWheelFrames() {
 
 // Function to update camera position and rotation
 function updateCamera() {
-    const radius = 5; // Distance of the camera from the kart
+    const radius = 2; // Distance of the camera from the kart
     const cameraRotationSpeed = 0.001; // Speed of camera rotation
 
     // Calculate new angle for the camera
