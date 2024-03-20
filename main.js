@@ -38,17 +38,24 @@ const kartTextureHeight = 32;
 
 // Function to set sprite frame
 function setSpriteFrame(sprite, frameIndex, mirror = false) {
-    let x, y;
-    if (!mirror) {
-        x = (frameIndex % kartFramesPerColumn) * kartFrameWidth;
-        y = Math.floor(frameIndex / kartFramesPerColumn) * kartFrameHeight;
-    } else {
-        const mirroredFrameIndex = kartFramesPerColumn - frameIndex - 1;
-        x = (mirroredFrameIndex % kartFramesPerColumn) * kartFrameWidth;
-        y = Math.floor(mirroredFrameIndex / kartFramesPerColumn) * kartFrameHeight;
+    const x = (frameIndex % kartFramesPerColumn) * kartFrameWidth;
+    const y = Math.floor(frameIndex / kartFramesPerColumn) * kartFrameHeight;
+
+    // Calculate texture offsets and repeats
+    const offsetX = x / kartTextureWidth;
+    const offsetY = 1 - (y + kartFrameHeight) / kartTextureHeight;
+    const repeatX = kartFrameWidth / kartTextureWidth;
+    const repeatY = kartFrameHeight / kartTextureHeight;
+
+    // Set texture coordinates
+    sprite.material.map.offset.set(offsetX, offsetY);
+    sprite.material.map.repeat.set(repeatX, repeatY);
+
+    // Mirror texture horizontally if requested
+    if (mirror) {
+        sprite.material.map.repeat.x *= -1;
+        sprite.material.map.offset.x += repeatX;
     }
-    sprite.material.map.offset.set(x / kartTextureWidth, 1 - (y + kartFrameHeight) / kartTextureHeight);
-    sprite.material.map.repeat.set(kartFrameWidth / kartTextureWidth, kartFrameHeight / kartTextureHeight);
 }
 
 // Create wheels
@@ -61,7 +68,6 @@ const createWheels = () => {
     for (let i = 0; i < 4; i++) {
         // Create sprite
         const wheel = new THREE.Sprite(wheelSpriteMaterial.clone()); // Clone the material to avoid shared material properties
-        setSpriteFrame(wheel, 0)
         wheel.scale.set(0.5, 0.5, 1); // Scale down the sprite
         kartGroup.add(wheel);
     }
@@ -125,9 +131,9 @@ function updateWheelFrames() {
     if (kartRotationY <= Math.PI / 2) {
         // Within first 90°, use frameIndex directly
         frameIndex = Math.floor((kartRotationY / (Math.PI / 2)) * kartFramesPerColumn);
+        mirror = true;
     } else if (kartRotationY <= Math.PI) {
         // Between 90° and 180°, mirror frames
-        mirror = true;
         const mirroredAngle = Math.PI - kartRotationY; // Calculate mirrored angle
         frameIndex = Math.floor((mirroredAngle / (Math.PI / 2)) * kartFramesPerColumn);
     } else if (kartRotationY <= Math.PI * 1.5) {
@@ -143,6 +149,7 @@ function updateWheelFrames() {
     // Ensure frameIndex stays within valid range
     frameIndex = (frameIndex + kartFramesPerColumn) % kartFramesPerColumn;
     debugText.innerHTML = `${frameIndex}, ${mirror}, ${kartRotationY}`
+    // console.log(`${frameIndex}, ${mirror}, ${kartRotationY.toFixed(1)}`)
 
     // Update the frame for each wheel
     for (let i = 1; i <= 4; i++) { // Starting from 1 as main kart is at index 0
@@ -154,7 +161,7 @@ function updateWheelFrames() {
 // Function to animate the scene
 function animate() {
     // Rotate the rectangle
-    // rectangle.rotation.x += 0.01;
+    // kartGroup.rotation.x += 0.003;
     kartGroup.rotation.y -= 0.003;
 
     // Self-explainatory
