@@ -1,140 +1,182 @@
 // Import Three.js
 import * as THREE from 'three';
 
-// Create a scene
+const debugText = document.getElementById('debugText');
+
+// Setup everything
 const scene = new THREE.Scene();
-
-// Create a camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 5;
+camera.position.z = 2.5;
 
-// Create a renderer
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Create a gray material
-const material = new THREE.MeshBasicMaterial({ color: 0x888888 });
+const kartGroup = new THREE.Group()
 
-// Create a wireframe material
-const wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
-
-// Create a geometry (box)
-const geometry = new THREE.BoxGeometry(1, 1, 2);
-
-// Create a mesh with the geometry and material
-const rectangle = new THREE.Mesh(geometry, material);
-
-// Create a wireframe mesh
-const wireframe = new THREE.Mesh(geometry, wireframeMaterial);
-rectangle.add(wireframe); // Add wireframe as a child of the rectangle
-
-// Add the rectangle to the scene
-scene.add(rectangle);
-
-// Load sprite texture
-const spriteTexture = new THREE.TextureLoader().load('wheel_sprite_sheet.png');
-spriteTexture.magFilter = THREE.NearestFilter; // Set magnification filter
-spriteTexture.minFilter = THREE.NearestFilter; // Set minification filter
-const spriteMaterial = new THREE.SpriteMaterial({ map: spriteTexture });
-
-// Create sprites for each corner
-const sprites = [];
-for (let i = 0; i < 4; i++) {
-    const sprite = new THREE.Sprite(spriteMaterial.clone()); // Clone the material to avoid shared material properties
-    sprite.scale.set(0.5, 0.5, 1); // Scale down the sprite
-    sprites.push(sprite);
-    scene.add(sprite);
+// Function to create the kart
+const createKart = () => {
+    const mainKartMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
+    const mainKartWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
+    const geometry = new THREE.BoxGeometry(1, 1, 2);
+    const mainKart = new THREE.Mesh(geometry, mainKartMaterial);
+    const mainKartWireframe = new THREE.Mesh(geometry, mainKartWireframeMaterial);
+    mainKart.add(mainKartWireframe);
+    kartGroup.add(mainKart); // Add mainKart to the group
 }
-
-// Function to update sprite positions
-function updateSpritePositions() {
-    const corners = [
-        // Traseras
-        new THREE.Vector3(-0.5, -0.5, -1), 
-        new THREE.Vector3(0.5, -0.5, -1), 
-        // Frontales
-        new THREE.Vector3(-0.5, -0.5, 1), 
-        new THREE.Vector3(0.5, -0.5, 1), 
-    ];
-
-    corners.forEach((corner, index) => {
-        const sprite = sprites[index];
-        const cornerWorld = corner.applyMatrix4(rectangle.matrixWorld); // Convert corner position to world space
-        sprite.position.copy(cornerWorld);
-    });
-}
-
-// Function to set sprite frame
-function setSpriteFrame(sprite, frameIndex, framesPerRow, frameWidth, frameHeight, textureWidth, textureHeight) {
-    const x = (frameIndex % framesPerRow) * frameWidth;
-    const y = Math.floor(frameIndex / framesPerRow) * frameHeight;
-    sprite.material.map.offset.set(x / textureWidth, 1 - (y + frameHeight) / textureHeight);
-    sprite.material.map.repeat.set(frameWidth / textureWidth, frameHeight / textureHeight);
-}
+createKart()
 
 // Set frame properties
-const framesPerRow = 17;
-const frameWidth = 32;
-const frameHeight = 32;
-const textureWidth = 544;
-const textureHeight = 32;
+const kartFramesPerColumn = 17;
+const kartFrameWidth = 32;
+const kartFrameHeight = 32;
+const kartTextureWidth = 544;
+const kartTextureHeight = 32;
 
-// Set initial sprite frame for each sprite
-sprites.forEach(sprite => setSpriteFrame(sprite, 0, framesPerRow, frameWidth, frameHeight, textureWidth, textureHeight));
+// const kartFramesPerColumn = 13;
+// const kartTextureWidth = 1056;
 
-const debugText = document.getElementById('debugText');
-// debugText.innerHTML = `Sprite.rotation.y: ${sprite.rotation.y.toFixed(2)}`;
+// Function to set sprite frame
+function setSpriteFrame(sprite, frameIndex) {
+    const x = (frameIndex % kartFramesPerColumn) * kartFrameWidth;
+    const y = Math.floor(frameIndex / kartFramesPerColumn) * kartFrameHeight;
+    sprite.material.map.offset.set(x / kartTextureWidth, 1 - (y + kartFrameHeight) / kartTextureHeight);
+    sprite.material.map.repeat.set(kartFrameWidth / kartTextureWidth, kartFrameHeight / kartTextureHeight);
+}
 
-// Function to update sprite frame based on camera position
-function updateSpriteFrames() {
-    const cameraDirection = new THREE.Vector3(); // Camera's direction vector
-    camera.getWorldDirection(cameraDirection); // Get the direction the camera is facing
+// Create wheels
+const createWheels = () => {
+    const wheelSpriteTexture = new THREE.TextureLoader().load('wheel_sprite_sheet.png');
+    wheelSpriteTexture.magFilter = THREE.NearestFilter; // Set magnification filter
+    wheelSpriteTexture.minFilter = THREE.NearestFilter; // Set minification filter
+    const wheelSpriteMaterial = new THREE.SpriteMaterial({ map: wheelSpriteTexture });
 
-    const cameraUp = new THREE.Vector3(0, 1, 0); // Camera's up vector
+    for (let i = 0; i < 4; i++) {
+        // Create sprite
+        const wheel = new THREE.Sprite(wheelSpriteMaterial.clone()); // Clone the material to avoid shared material properties
+        setSpriteFrame(wheel, 0, kartFramesPerColumn, kartFrameWidth, kartFrameHeight, kartTextureWidth, kartTextureHeight)
+        wheel.scale.set(0.5, 0.5, 1); // Scale down the sprite
+        kartGroup.add(wheel);
+    }
+}
+createWheels();
 
-    // Calculate frame index for each sprite based on camera direction
-    sprites.forEach(sprite => {
-        const spritePosition = sprite.getWorldPosition(new THREE.Vector3()); // Get sprite's world position
-        const vectorToSprite = spritePosition.clone().sub(camera.position).normalize(); // Vector from camera to sprite
+// Function to create squares
+const createSquares = () => {
+    const squareGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const squareWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
+    for (let i = 0; i < 4; i++) {
+        const square = new THREE.Mesh(squareGeometry, squareWireframeMaterial);
+        kartGroup.add(square); // Add square to the group
+    }
+}
+createSquares()
 
-        // Calculate angle between camera direction and vector to sprite
-        const angle = Math.atan2(vectorToSprite.x, vectorToSprite.z) - Math.atan2(cameraDirection.x, cameraDirection.z);
+// Add the group to the scene
+scene.add(kartGroup);
 
-        // Convert angle to frame index
-        let frameIndex = Math.round(angle / (Math.PI * 2 / framesPerRow)) % framesPerRow;
-        if (frameIndex < 0) {
-            frameIndex += framesPerRow; // Ensure positive frame index
-        }
+// Function to rotate all childs from group
+function updateChildPositions() {
+    const offsetX = 0.65
+    const offsetY = -0.25
+    const offsetZ = 0.74
+    const kartCornersPositions = [
+        new THREE.Vector3(-offsetX, offsetY, -offsetZ),
+        new THREE.Vector3(offsetX, offsetY, -offsetZ),
+        new THREE.Vector3(-offsetX, offsetY, offsetZ),
+        new THREE.Vector3(offsetX, offsetY, offsetZ),
+    ];
 
-        // Set frame for sprite
-        setSpriteFrame(sprite, frameIndex, framesPerRow, frameWidth, frameHeight, textureWidth, textureHeight);
+    // Update positions and rotations for main kart, wheels, and squares
+    kartCornersPositions.forEach((corner, index) => {
+        // Calculate kart position and rotation for the corner
+        const cornerKart = corner.clone().applyMatrix4(kartGroup.matrixWorld);
 
-        // Calculate vertical rotation of sprite based on camera up vector and rectangle up vector
-        const rectangleUp = new THREE.Vector3(0, 1, 0); // Rectangle's up vector
-        const rotationAngle = Math.acos(THREE.MathUtils.clamp(cameraUp.dot(rectangleUp), -1, 1));
-        sprite.rotation.y = rotationAngle;
+        // Update position and rotation for the main kart
+        const mainKart = kartGroup.children[0];
+        // mainKart.position.copy(cornerWorld);
+        mainKart.rotation.copy(kartGroup.rotation);
+
+        // Update position and rotation for the wheels (assuming consecutive order)
+        const wheelIndex = index + 1;
+        const wheel = kartGroup.children[wheelIndex];
+        wheel.position.copy(cornerKart);
+        wheel.rotation.copy(kartGroup.rotation);
+
+        // Update position and rotation for the squares (assuming consecutive order)
+        const squareIndex = wheelIndex + 4;
+        const square = kartGroup.children[squareIndex];
+        square.position.copy(cornerKart);
+        square.rotation.copy(kartGroup.rotation);
     });
 }
+
+// function updateWheelFrames() {
+//     const kartRotationY = kartGroup.rotation.y; // Get the rotation angle of the kart around the y-axis
+
+//     // Calculate frame index based on rotation angle
+//     let frameIndex = Math.floor((kartRotationY / (Math.PI / 2)) * kartFramesPerColumn) % kartFramesPerColumn;
+//     if (frameIndex < 0) {
+//         frameIndex += kartFramesPerColumn; // Ensure frameIndex is positive
+//     }
+
+//     // Update the frame for each wheel
+//     for (let i = 1; i <= 4; i++) { // Starting from 1 as main kart is at index 0
+//         const wheel = kartGroup.children[i];
+//         setSpriteFrame(wheel, frameIndex);
+//     }
+// }
+
+function updateWheelFrames() {
+    let kartRotationY = kartGroup.rotation.y;
+    kartRotationY = ((kartRotationY % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2); // Normalize angle to [0, 2π)
+
+    let frameIndex;
+    if (kartRotationY <= Math.PI / 2) {
+        // Within first 90°, use frameIndex directly
+        frameIndex = Math.floor((kartRotationY / (Math.PI / 2)) * kartFramesPerColumn) % kartFramesPerColumn;
+    } else {
+        // Beyond 90°, mirror frames
+        const mirroredAngle = Math.PI - kartRotationY; // Calculate mirrored angle
+        frameIndex = Math.floor((mirroredAngle / (Math.PI / 2)) * kartFramesPerColumn) % kartFramesPerColumn;
+        
+        // Generate mirrored frame if it doesn't exist
+        if (frameIndex === 0) {
+            // If frameIndex is 0, it means the mirrored frame is the first frame, so we just reverse the rotation
+            frameIndex = 1;
+        } else {
+            // Otherwise, we mirror the existing frame
+            frameIndex = kartFramesPerColumn - frameIndex;
+        }
+    }
+
+    // Update the frame for each wheel
+    for (let i = 1; i <= 4; i++) { // Starting from 1 as main kart is at index 0
+        const wheel = kartGroup.children[i];
+        setSpriteFrame(wheel, frameIndex);
+    }
+}
+
+
 
 // Function to animate the scene
 function animate() {
-    requestAnimationFrame(animate);
-
     // Rotate the rectangle
     // rectangle.rotation.x += 0.01;
-    rectangle.rotation.y += 0.01;
+    kartGroup.rotation.y -= 0.003;
 
-    // Update sprite positions
-    updateSpritePositions();
+    // Self-explainatory
+    updateChildPositions()
 
-    // Update sprite frame based on camera view angle
-    updateSpriteFrames();
+    // Self-explainatory
+    updateWheelFrames()
 
     // Render the scene
     renderer.render(scene, camera);
-}
 
+    // Loop
+    requestAnimationFrame(animate);
+}
 
 // Start animation
 animate();
