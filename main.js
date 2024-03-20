@@ -70,10 +70,10 @@ createKartWheels()
 scene.add(kartGroup);
 
 // Spritesheet properties
-const wheelFramesPerColumn = 15;
+const wheelFramesPerColumn = 16;
 const wheelFrameWidth = 32;
 const wheelFrameHeight = 32;
-const wheelTextureWidth = 480;
+const wheelTextureWidth = 512;
 const wheelTextureHeight = 32;
 
 // Function to set sprite frame
