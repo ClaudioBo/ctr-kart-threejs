@@ -2,8 +2,6 @@
 import * as THREE from 'three';
 import SpriteText from 'three-spritetext';
 
-const debugText = document.getElementById('debugText');
-
 // Setup everything
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -19,20 +17,16 @@ const kartGroup = new THREE.Group()
 const createKart = () => {
     const mainKartMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
     const mainKartWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
-    // const mainKartGeometry = new THREE.BoxGeometry(2, 0.1, 1);
-    const mainKartGeometry = new THREE.BoxGeometry(2, 0.25, 1);
+    const mainKartGeometry = new THREE.BoxGeometry(2, 0.2, 1);
     const mainKartMesh = new THREE.Mesh(mainKartGeometry, mainKartMaterial);
     const mainKartWireframe = new THREE.Mesh(mainKartGeometry, mainKartWireframeMaterial);
     mainKartMesh.add(mainKartWireframe);
     kartGroup.add(mainKartMesh); // Add mainKart to the group
-    kartGroup.position.y = -0.5
 }
 createKart()
 
 // Create a template group that would store a Sprite and DebugSquare
 const createWheel = () => {
-
-    const axisHelper = new THREE.AxesHelper(0.5); // Specify the size of the axes (optional)
 
     // Debug square material
     const debugSquareGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
@@ -40,27 +34,26 @@ const createWheel = () => {
 
     // Wheel material
     const wheelSpriteTexture = new THREE.TextureLoader().load('wheel_sprite_sheet.png');
-    wheelSpriteTexture.magFilter = THREE.NearestFilter; // Set magnification filter
-    wheelSpriteTexture.minFilter = THREE.NearestFilter; // Set minification filter
+    wheelSpriteTexture.magFilter = THREE.NearestFilter;
+    wheelSpriteTexture.minFilter = THREE.NearestFilter;
     const wheelSpriteMaterial = new THREE.SpriteMaterial({ map: wheelSpriteTexture });
 
     // Wheel group
     const wheelGroup = new THREE.Group()
 
     const wheelSprite = new THREE.Sprite(wheelSpriteMaterial);
-    wheelSprite.scale.set(0.5, 0.5, 1); // Scale down the sprite
+    wheelSprite.scale.set(0.5, 0.5, 1);
 
     // Debug wireframe
     const debugSquareMesh = new THREE.Mesh(debugSquareGeometry, debugSquareMaterial);
 
-    // Debug text
-    const textSprite = new SpriteText('#');
-    textSprite.textHeight = 0.15
+    // // Debug text
+    // const textSprite = new SpriteText('#');
+    // textSprite.textHeight = 0.15
 
     wheelGroup.add(wheelSprite)
     wheelGroup.add(debugSquareMesh)
-    wheelGroup.add(axisHelper)
-    wheelGroup.add(textSprite)
+    // wheelGroup.add(textSprite)
 
     return wheelGroup
 }
@@ -111,7 +104,7 @@ function updateKartChildPositions() {
 
     // Calculate the positions of wheel group relative to the main kart's local space
     const offsetX = 0.74;
-    const offsetY = 0;
+    const offsetY = -0;
     const offsetZ = 0.65;
     const wheelLocalPositions = [
         new THREE.Vector3(-offsetX, offsetY, -offsetZ),
@@ -134,27 +127,13 @@ function updateKartChildPositions() {
 
         // Set positions
         wheelGroup.position.copy(wheelPosition);
-        // if (i == 4) {
-        //     wheelGroup.position.y += 0.2
-        // }
     }
 }
 
-// Function to update the frame for each wheel based on the camera's view
-
-
+// Functions to update the frame for each wheel based on the camera's view
 function updateKartWheelFrames() {
     for (let i = 1; i <= 4; i++) {
         const wheelGroup = kartGroup.children[i];
-        wheelGroup.rotation.y -= 0.01
-        changeWheelSpriteBasedOnCamera(wheelGroup)
-    }
-}
-
-function updateTestingWheelFrames() {
-    for (let i = 0; i < testingGroup.children.length; i++) {
-        const wheelGroup = testingGroup.children[i];
-        wheelGroup.rotation.y += 0.01
         changeWheelSpriteBasedOnCamera(wheelGroup)
     }
 }
@@ -194,30 +173,6 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
     setSpriteFrame(wheelGroup.children[0], frameIndex, mirror);
 }
 
-const testingGroup = new THREE.Group()
-function createTestingGroup() {
-    const numWheels = 10; // Number of wheels in the circle
-    const radius = 2.5; // Radius of the circle
-    const angleIncrement = (2 * Math.PI) / numWheels; // Angle between each wheel
-
-    for (let i = 0; i < numWheels; i++) {
-        // Calculate position of the wheel along the circumference of the circle
-        const angle = i * angleIncrement;
-        const x = kartGroup.position.x + radius * Math.cos(angle);
-        const z = kartGroup.position.z + radius * Math.sin(angle);
-
-        // Create and position the wheel
-        const wheel = createWheel();
-        wheel.position.set(x, 0, z);
-        testingGroup.add(wheel);
-    }
-}
-
-createTestingGroup()
-
-scene.add(testingGroup)
-
-
 // Function to update camera position and rotation
 function updateCamera() {
     const radius = 2; // Distance of the camera from the kart
@@ -231,7 +186,7 @@ function updateCamera() {
     const cameraZ = kartGroup.position.z + radius * Math.sin(cameraAngle);
 
     // Set the new position for the camera
-    camera.position.set(cameraX, 0, cameraZ);
+    camera.position.set(cameraX, 0.5, cameraZ);
 
     // Set the camera to look at the kart
     camera.lookAt(kartGroup.position);
@@ -245,7 +200,6 @@ function animate() {
     updateCamera();
 
     updateKartChildPositions()
-    updateTestingWheelFrames()
     updateKartWheelFrames()
 
     renderer.render(scene, camera);
