@@ -6,7 +6,7 @@ const debugText = document.getElementById('debugText');
 // Setup everything
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 2.5;
+camera.position.z = 4.5;
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -18,7 +18,7 @@ const kartGroup = new THREE.Group()
 const createKart = () => {
     const mainKartMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
     const mainKartWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
-    const geometry = new THREE.BoxGeometry(1, 1, 2);
+    const geometry = new THREE.BoxGeometry(2, 0.25, 1);
     const mainKart = new THREE.Mesh(geometry, mainKartMaterial);
     const mainKartWireframe = new THREE.Mesh(geometry, mainKartWireframeMaterial);
     mainKart.add(mainKartWireframe);
@@ -27,10 +27,10 @@ const createKart = () => {
 createKart()
 
 // Set frame properties
-const kartFramesPerColumn = 17;
+const kartFramesPerColumn = 15;
 const kartFrameWidth = 32;
 const kartFrameHeight = 32;
-const kartTextureWidth = 544;
+const kartTextureWidth = 480;
 const kartTextureHeight = 32;
 
 // const kartFramesPerColumn = 13;
@@ -93,9 +93,9 @@ function updateChildPositions() {
     const mainKart = kartGroup.children[0];
 
     // Calculate the positions of wheels and squares relative to the main kart's local space
-    const offsetX = 0.65;
+    const offsetX = 0.74;
     const offsetY = -0.25;
-    const offsetZ = 0.74;
+    const offsetZ = 3.65;
     const wheelLocalPositions = [
         new THREE.Vector3(-offsetX, offsetY, -offsetZ),
         new THREE.Vector3(offsetX, offsetY, -offsetZ),
@@ -119,50 +119,75 @@ function updateChildPositions() {
         // Set positions
         wheel.position.copy(wheelPosition);
         square.position.copy(wheelPosition); // Assuming square positions are the same as wheel positions
+        if(i==4){
+            wheel.position.y+=1
+        }
     }
 }
 
+// Function to update the frame for each wheel based on the camera's view
 function updateWheelFrames() {
-    let kartRotationY = kartGroup.rotation.y;
-    kartRotationY = ((kartRotationY % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2); // Normalize angle to [0, 2π)
-
-    let frameIndex;
-    let mirror = false;
-    if (kartRotationY <= Math.PI / 2) {
-        // Within first 90°, use frameIndex directly
-        frameIndex = Math.floor((kartRotationY / (Math.PI / 2)) * kartFramesPerColumn);
-        mirror = true;
-    } else if (kartRotationY <= Math.PI) {
-        // Between 90° and 180°, mirror frames
-        const mirroredAngle = Math.PI - kartRotationY; // Calculate mirrored angle
-        frameIndex = Math.floor((mirroredAngle / (Math.PI / 2)) * kartFramesPerColumn);
-    } else if (kartRotationY <= Math.PI * 1.5) {
-        // Between 180° and 270°, mirror frames
-        mirror = true;
-        const mirroredAngle = kartRotationY - Math.PI; // Calculate mirrored angle
-        frameIndex = Math.floor((mirroredAngle / (Math.PI / 2)) * kartFramesPerColumn);
-    } else {
-        // Beyond 270°, use frameIndex directly
-        frameIndex = Math.floor(((Math.PI * 2 - kartRotationY) / (Math.PI / 2)) * kartFramesPerColumn);
-    }
-
-    // Ensure frameIndex stays within valid range
-    frameIndex = (frameIndex + kartFramesPerColumn) % kartFramesPerColumn;
-    debugText.innerHTML = `${frameIndex}, ${mirror}, ${kartRotationY}`
-    // console.log(`${frameIndex}, ${mirror}, ${kartRotationY.toFixed(1)}`)
-
-    // Update the frame for each wheel
-    for (let i = 1; i <= 4; i++) { // Starting from 1 as main kart is at index 0
+    for (let i = 1; i <= 4; i++) {
         const wheel = kartGroup.children[i];
+
+        // Calculate the angle between the camera's position and the wheel's position
+        const relativePosition = wheel.position.clone().sub(camera.position);
+        const angleToCamera = Math.atan2(relativePosition.z, relativePosition.x);
+
+        // Calculate the frame index based on the angle between the camera and the wheel
+        let frameIndex;
+        let mirror = false;
+        const normalizedAngle = ((angleToCamera % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+
+        if (normalizedAngle <= Math.PI / 2) {
+            frameIndex = Math.floor((normalizedAngle / (Math.PI / 2)) * kartFramesPerColumn);
+            mirror = true;
+        } else if (normalizedAngle <= Math.PI) {
+            const mirroredAngle = Math.PI - normalizedAngle;
+            frameIndex = Math.floor((mirroredAngle / (Math.PI / 2)) * kartFramesPerColumn);
+        } else if (normalizedAngle <= Math.PI * 1.5) {
+            mirror = true;
+            const mirroredAngle = normalizedAngle - Math.PI;
+            frameIndex = Math.floor((mirroredAngle / (Math.PI / 2)) * kartFramesPerColumn);
+        } else {
+            frameIndex = Math.floor(((Math.PI * 2 - normalizedAngle) / (Math.PI / 2)) * kartFramesPerColumn);
+        }
+
+        // Ensure frameIndex stays within valid range
+        frameIndex = (frameIndex + kartFramesPerColumn) % kartFramesPerColumn;
+
+        // Update the frame for the current wheel
         setSpriteFrame(wheel, frameIndex, mirror);
     }
+}
+
+// Function to update camera position and rotation
+function updateCamera() {
+    const radius = 5; // Distance of the camera from the kart
+    const cameraRotationSpeed = 0.001; // Speed of camera rotation
+
+    // Calculate new angle for the camera
+    const cameraAngle = Date.now() * cameraRotationSpeed;
+
+    // Calculate new position for the camera based on its rotation around the kart
+    const cameraX = kartGroup.position.x + radius * Math.cos(cameraAngle);
+    const cameraZ = kartGroup.position.z + radius * Math.sin(cameraAngle);
+
+    // Set the new position for the camera
+    camera.position.set(cameraX, 0, cameraZ);
+
+    // Set the camera to look at the kart
+    camera.lookAt(kartGroup.position);
 }
 
 // Function to animate the scene
 function animate() {
     // Rotate the rectangle
     // kartGroup.rotation.x += 0.003;
-    kartGroup.rotation.y -= 0.003;
+    // kartGroup.rotation.y -= 0.003;
+
+    // Update the camera position and rotation
+    updateCamera();
 
     // Self-explainatory
     updateChildPositions()
