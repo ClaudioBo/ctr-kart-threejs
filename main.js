@@ -12,6 +12,14 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+window.addEventListener('resize', onWindowResize, false);
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
 const kartGroup = new THREE.Group()
 
 // Function to create the kart
@@ -52,7 +60,7 @@ const createWheel = () => {
 
     // Debug text
     const textSprite = new SpriteText('#');
-    textSprite.textHeight = 0.05
+    textSprite.textHeight = 0.025
     textSprite.strokeColor = "black"
     textSprite.strokeWidth = 1
 
@@ -148,6 +156,17 @@ function updateKartWheelFrames() {
     }
 }
 
+// Helper functions for easing
+function easeInOut(t) {
+    t = Math.max(0, Math.min(1, t));
+    return t < 0.5 ? 0.5 * Math.pow(2 * t, 2) : 0.5 * (2 - Math.pow(2 * (1 - t), 2));
+}
+
+// Helper functions for normalizing values
+function normalize(initial_value, current_value, max_value) {
+    return (current_value - initial_value) / (max_value - initial_value);
+}
+
 function changeWheelSpriteBasedOnCamera(wheelGroup) {
     // Calculate the angle between the camera's position and the wheel's position
     const relativePosition = wheelGroup.position.clone().sub(camera.position);
@@ -173,16 +192,18 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
     }
 
     // TODO: Better interpolated rotation
-    if (angleToCamera > 70 && angleToCamera < 90) {
-        const factor = (angleToCamera - 70) / 20;
-        rotationDegree = THREE.MathUtils.lerp(0, 180, factor);
-    } else if (angleToCamera > -90 && angleToCamera < -70) {
-        const factor = (-angleToCamera - 70) / 20;
-        rotationDegree = THREE.MathUtils.lerp(0, 180, factor);
+    const INTERPOLATION_START_ANGLE = 75;
+    let factor = 0
+    if (angleToCamera > INTERPOLATION_START_ANGLE && angleToCamera < 90) {
+        factor = normalize(INTERPOLATION_START_ANGLE, angleToCamera, 90);
+        rotationDegree = THREE.MathUtils.lerp(180, 0, easeInOut(1.0 - factor));
+    } else if (angleToCamera > -90 && angleToCamera < -INTERPOLATION_START_ANGLE) {
+        factor = normalize(-INTERPOLATION_START_ANGLE, angleToCamera, -90);
+        rotationDegree = THREE.MathUtils.lerp(0, -180, easeInOut(factor));
     }
 
     // Debugging text
-    wheelGroup.children[2].text = `Angle: ${angleToCamera.toFixed(1)}\nFrame: ${frameIndex}\nRotation: ${rotationDegree}\nMirror: ${mirror}`
+    wheelGroup.children[2].text = `Angle: ${angleToCamera.toFixed(1)}\nFrame: ${frameIndex}\nRotation: ${rotationDegree.toFixed(2)}\nMirror: ${mirror}`
 
     // Update the frame for the current wheel
     setSpriteFrame(wheelGroup.children[0], frameIndex, mirror, rotationDegree);
