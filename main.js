@@ -1,6 +1,7 @@
 // Import Three.js
 import * as THREE from 'three';
 import SpriteText from 'three-spritetext';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // Setup everything
 const scene = new THREE.Scene();
@@ -209,86 +210,30 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
     setSpriteFrame(wheelGroup.children[0], frameIndex, mirror, rotationDegree);
 }
 
-// Define variables for mouse orbit controls
-let isDragging = false;
-let previousMousePosition = { x: 0, y: 0 };
 
-// Define the target point around which the camera will orbit
-const orbitTarget = new THREE.Vector3();
 
-// Define the zoom speed
-const zoomSpeed = 0.1;
+const controls = new OrbitControls( camera, renderer.domElement );
 
-// Function to handle mouse down event
-function onMouseDown(event) {
-    isDragging = true;
-    previousMousePosition = { x: event.clientX, y: event.clientY };
-}
 
-// Function to handle mouse move event
-function onMouseMove(event) {
-    if (isDragging) {
-        const deltaMove = {
-            x: event.clientX - previousMousePosition.x,
-            y: event.clientY - previousMousePosition.y
-        };
 
-        const deltaRotationQuaternion = new THREE.Quaternion()
-            .setFromEuler(new THREE.Euler(
-                -deltaMove.y * (Math.PI / 180),
-                -deltaMove.x * (Math.PI / 180),
-                0,
-                'XYZ'
-            ));
 
-        camera.position.sub(orbitTarget);
-        camera.position.applyQuaternion(deltaRotationQuaternion);
-        camera.position.add(orbitTarget);
-        camera.lookAt(orbitTarget);
-
-        previousMousePosition = { x: event.clientX, y: event.clientY };
-    }
-}
-
-// Function to handle mouse up event
-function onMouseUp(event) {
-    isDragging = false;
-}
-
-// Function to handle mouse wheel event (zoom)
-function onMouseWheel(event) {
-    const delta = event.deltaY;
-    const zoomDirection = delta > 0 ? -1 : 1;
-
-    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-    const zoomDelta = forward.clone().multiplyScalar(zoomSpeed * zoomDirection);
-
-    camera.position.add(zoomDelta);
-}
-
-// Add event listeners for mouse controls
-document.addEventListener('wheel', onMouseWheel, false);
+let isCameraAutoRotation = false
 
 // Function to handle key presses
 function onKeyDown(event) {
     if (event.key == "x")
-        isCameraRotation = !isCameraRotation
+        isCameraAutoRotation = !isCameraAutoRotation
     if (event.key == " ")
         console.log(kartGroup.children[4].children[2].text.replaceAll("\n", ", "))
 }
 
-let isCameraRotation = false
-
-// Add event listeners for mouse controls
-document.addEventListener('mousedown', onMouseDown, false);
-document.addEventListener('mousemove', onMouseMove, false);
-document.addEventListener('mouseup', onMouseUp, false);
 document.addEventListener('keydown', onKeyDown, false);
+
 
 
 // Function to update camera position and rotation
 function updateCamera() {
-    if (!isCameraRotation) return
+    if (!isCameraAutoRotation) return
     const radius = 2; // Distance of the camera from the kart
     const cameraRotationSpeed = 0.0005; // Speed of camera rotation
 
@@ -314,6 +259,8 @@ function animate() {
 
     updateKartChildPositions()
     updateKartWheelFrames()
+
+    controls.update();
 
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
