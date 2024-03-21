@@ -39,6 +39,7 @@ const createWheel = () => {
     const wheelSpriteTexture = new THREE.TextureLoader().load('wheel_sprite_sheet.png');
     wheelSpriteTexture.magFilter = THREE.NearestFilter;
     wheelSpriteTexture.minFilter = THREE.NearestFilter;
+    wheelSpriteTexture.colorSpace = THREE.SRGBColorSpace;
     const wheelSpriteMaterial = new THREE.SpriteMaterial({ map: wheelSpriteTexture });
 
     // Wheel group
