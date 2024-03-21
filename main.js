@@ -30,7 +30,6 @@ createKart()
 
 // Create a template group that would store a Sprite and DebugSquare
 const createWheel = () => {
-
     // Debug square material
     const debugSquareGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
     const debugSquareMaterial = new THREE.MeshBasicMaterial({ color: 0x555555, wireframe: true });
@@ -171,6 +170,15 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
         rotationDegree = 180;
     } else if (angleToCamera > -90 && angleToCamera < 0) {
         frameIndex = Math.floor(((-angleToCamera) / 90) * wheelFramesPerColumn);
+    }
+
+    // TODO: Better interpolated rotation
+    if (angleToCamera > 70 && angleToCamera < 90) {
+        const factor = (angleToCamera - 70) / 20;
+        rotationDegree = THREE.MathUtils.lerp(0, 180, factor);
+    } else if (angleToCamera > -90 && angleToCamera < -70) {
+        const factor = (-angleToCamera - 70) / 20;
+        rotationDegree = THREE.MathUtils.lerp(0, 180, factor);
     }
 
     // Debugging text
