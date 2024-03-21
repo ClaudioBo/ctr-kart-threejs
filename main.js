@@ -210,53 +210,25 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
     setSpriteFrame(wheelGroup.children[0], frameIndex, mirror, rotationDegree);
 }
 
-
-
-const controls = new OrbitControls( camera, renderer.domElement );
-
-
-
-
-let isCameraAutoRotation = false
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true
 
 // Function to handle key presses
 function onKeyDown(event) {
     if (event.key == "x")
-        isCameraAutoRotation = !isCameraAutoRotation
+        controls.autoRotate = !controls.autoRotate
+    if (event.key == "c") {
+        camera.position.set(0, 0, 2);
+        controls.update();
+    }
     if (event.key == " ")
         console.log(kartGroup.children[4].children[2].text.replaceAll("\n", ", "))
 }
 
 document.addEventListener('keydown', onKeyDown, false);
 
-
-
-// Function to update camera position and rotation
-function updateCamera() {
-    if (!isCameraAutoRotation) return
-    const radius = 2; // Distance of the camera from the kart
-    const cameraRotationSpeed = 0.0005; // Speed of camera rotation
-
-    // Calculate new angle for the camera
-    const cameraAngle = Date.now() * cameraRotationSpeed;
-
-    // Calculate new position for the camera based on its rotation around the kart
-    const cameraX = kartGroup.position.x + radius * Math.sin(cameraAngle);
-    const cameraY = kartGroup.position.y + radius * Math.sin(cameraAngle);
-    const cameraZ = kartGroup.position.z + radius * Math.cos(cameraAngle);
-
-    // Set the new position for the camera
-    camera.position.set(cameraX, 0, cameraZ);
-
-    // Set the camera to look at the kart
-    camera.lookAt(kartGroup.position);
-}
-
-
 // Function to animate the scene
 function animate() {
-    updateCamera();
-
     updateKartChildPositions()
     updateKartWheelFrames()
 
