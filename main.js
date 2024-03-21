@@ -5,9 +5,10 @@ import SpriteText from 'three-spritetext';
 // Setup everything
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 4.5;
+camera.position.z = 1.5;
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
@@ -65,7 +66,9 @@ const createWheel = () => {
 // Create 4 kart's wheels
 const createKartWheels = () => {
     for (let i = 0; i < 4; i++) {
-        kartGroup.add(createWheel())
+        const wheelNew = createWheel()
+        wheelNew.name = i
+        kartGroup.add(wheelNew)
     }
 }
 createKartWheels()
@@ -148,40 +151,32 @@ function updateKartWheelFrames() {
 function changeWheelSpriteBasedOnCamera(wheelGroup) {
     // Calculate the angle between the camera's position and the wheel's position
     const relativePosition = wheelGroup.position.clone().sub(camera.position);
+    const angleToCamera = Math.atan2(relativePosition.z, relativePosition.x) * (180 / Math.PI);
 
-    // Apply the inverse of the parent group's rotation to the relative position
-    const rotatedRelativePosition = relativePosition.applyAxisAngle(new THREE.Vector3(0, 1, 0), -wheelGroup.rotation.y);
-
-    const angleToCamera = Math.atan2(rotatedRelativePosition.z, rotatedRelativePosition.x);
-
-    // Calculate the frame index based on the angle between the camera and the wheel
+    // Frame selection, sprite rotation and mirroring
     let frameIndex;
+    let rotationDegree = 0;
     let mirror = false;
-    const normalizedAngle = ((angleToCamera % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
 
-    // Determine frame index based on the angle
-    if (normalizedAngle <= Math.PI / 2) {
-        frameIndex = Math.floor((normalizedAngle / (Math.PI / 2)) * wheelFramesPerColumn);
+    if (angleToCamera >= 0 && angleToCamera <= 90) {
+        frameIndex = Math.floor((angleToCamera / 90) * wheelFramesPerColumn);
         mirror = true;
-    } else if (normalizedAngle <= Math.PI) {
-        const mirroredAngle = Math.PI - normalizedAngle;
-        frameIndex = Math.floor((mirroredAngle / (Math.PI / 2)) * wheelFramesPerColumn);
-    } else if (normalizedAngle <= Math.PI * 1.5) {
+    } else if (angleToCamera > 90 && angleToCamera <= 180) {
+        frameIndex = Math.floor(((180 - angleToCamera) / 90) * wheelFramesPerColumn);
+        rotationDegree = 180;
         mirror = true;
-        const mirroredAngle = normalizedAngle - Math.PI;
-        frameIndex = Math.floor((mirroredAngle / (Math.PI / 2)) * wheelFramesPerColumn);
-    } else {
-        frameIndex = Math.floor(((Math.PI * 2 - normalizedAngle) / (Math.PI / 2)) * wheelFramesPerColumn);
+    } else if (angleToCamera > -180 && angleToCamera <= -90) {
+        frameIndex = Math.floor(((180 + angleToCamera) / 90) * wheelFramesPerColumn);
+        rotationDegree = 180;
+    } else if (angleToCamera > -90 && angleToCamera < 0) {
+        frameIndex = Math.floor(((-angleToCamera) / 90) * wheelFramesPerColumn);
     }
 
-    // Ensure frameIndex stays within valid range
-    frameIndex = (frameIndex + wheelFramesPerColumn) % wheelFramesPerColumn;
-
-    // Debug shit
-    wheelGroup.children[2].text = `Frame: ${frameIndex}\nForce Rotation: ${forceAngle}\nMirror: ${mirror}`
+    // Debugging text
+    wheelGroup.children[2].text = `Angle: ${angleToCamera.toFixed(1)}\nFrame: ${frameIndex}\nRotation: ${rotationDegree}\nMirror: ${mirror}`
 
     // Update the frame for the current wheel
-    setSpriteFrame(wheelGroup.children[0], frameIndex, mirror, forceAngle);
+    setSpriteFrame(wheelGroup.children[0], frameIndex, mirror, rotationDegree);
 }
 
 // Define variables for mouse orbit controls
@@ -189,7 +184,7 @@ let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 
 // Define the target point around which the camera will orbit
-const orbitTarget = new THREE.Vector3(0.74, 0, 0.65);
+const orbitTarget = new THREE.Vector3();
 
 // Define the zoom speed
 const zoomSpeed = 0.1;
@@ -244,21 +239,15 @@ function onMouseWheel(event) {
 // Add event listeners for mouse controls
 document.addEventListener('wheel', onMouseWheel, false);
 
-let forceAngle  = 0
-
 // Function to handle key presses
 function onKeyDown(event) {
     if (event.key == "x")
         isCameraRotation = !isCameraRotation
-    if (event.key == "i")
-        forceAngle += 1
-    if (event.key == "k")
-        forceAngle -= 1
     if (event.key == " ")
         console.log(kartGroup.children[4].children[2].text.replaceAll("\n", ", "))
 }
 
-let isCameraRotation = true
+let isCameraRotation = false
 
 // Add event listeners for mouse controls
 document.addEventListener('mousedown', onMouseDown, false);
