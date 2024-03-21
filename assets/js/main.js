@@ -44,7 +44,7 @@ const createWheel = () => {
     const debugSquareMaterial = new THREE.MeshBasicMaterial({ color: 0x555555, wireframe: true });
 
     // Wheel material
-    const wheelSpriteTexture = new THREE.TextureLoader().load('wheel_sprite_sheet.png');
+    const wheelSpriteTexture = new THREE.TextureLoader().load('/assets/img/wheel_sprite_sheet.png');
     wheelSpriteTexture.magFilter = THREE.NearestFilter;
     wheelSpriteTexture.minFilter = THREE.NearestFilter;
     wheelSpriteTexture.colorSpace = THREE.SRGBColorSpace;

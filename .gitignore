@@ -1,1 +1,4 @@
 node_modules/
+
+assets/models/*
+!assets/models/.gitkeep
