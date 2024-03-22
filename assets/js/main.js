@@ -122,7 +122,7 @@ const createWheel = () => {
     const wheelGroup = new THREE.Group()
 
     const wheelSprite = new THREE.Sprite(wheelSpriteMaterial);
-    wheelSprite.scale.set(0.5, 0.5, 1);
+    wheelSprite.scale.set(0.45, 0.45, 1);
 
     // Debug wireframe
     const debugSquareMesh = new THREE.Mesh(debugSquareGeometry, debugSquareMaterial);
@@ -194,13 +194,16 @@ function updateKartChildPositions() {
     const mainKart = kartGroup.children[0];
 
     // Calculate the positions of wheel group relative to the main kart's local space
-    const offsetX = 0.62;
     const offsetY = 0.25;
+    const backOffsetX = 0.575;
+    const frontOffsetX = 0.575;
+    const backOffsetZ = 0.4;
+    const frontOffsetZ = 0.8;
     const wheelLocalPositions = [
-        new THREE.Vector3(-offsetX, offsetY, -0.40,),
-        new THREE.Vector3(-offsetX, offsetY, 0.80,),
-        new THREE.Vector3(offsetX, offsetY, -0.40,),
-        new THREE.Vector3(offsetX, offsetY, 0.80,),
+        new THREE.Vector3(-backOffsetX, offsetY, -backOffsetZ,), // Back right
+        new THREE.Vector3(-frontOffsetX, offsetY, frontOffsetZ,), // Front right  
+        new THREE.Vector3(backOffsetX, offsetY, -backOffsetZ,), // Back left
+        new THREE.Vector3(frontOffsetX, offsetY, frontOffsetZ,), // Front left
     ];
 
     // Update positions and rotations for the wheel group
