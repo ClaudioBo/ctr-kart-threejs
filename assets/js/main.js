@@ -129,7 +129,7 @@ const createWheel = () => {
 
     // Debug text
     const textSprite = new SpriteText('#');
-    textSprite.textHeight = 0.025
+    textSprite.textHeight = 0.035
     textSprite.strokeColor = "black"
     textSprite.strokeWidth = 1
 
@@ -158,10 +158,10 @@ createKartWheels()
 scene.add(kartGroup);
 
 // Spritesheet properties
-const wheelFramesPerColumn = 16;
+const wheelFramesPerColumn = 17;
 const wheelFrameWidth = 32;
 const wheelFrameHeight = 32;
-const wheelTextureWidth = 512;
+const wheelTextureWidth = 544;
 const wheelTextureHeight = 32;
 
 // Function to set sprite frame
@@ -249,44 +249,46 @@ function closestStepValue(value, step) {
 function changeWheelSpriteBasedOnCamera(wheelGroup) {
     // Calculate the angle between the camera's position and the wheel's position
     const relativePosition = wheelGroup.position.clone().sub(camera.position);
-    const angleToCamera = Math.atan2(relativePosition.z, relativePosition.x) * (180 / Math.PI);
+    const angleToCameraX = Math.atan2(relativePosition.z, relativePosition.x) * (180 / Math.PI);
+    const angleToCameraY = Math.atan2(relativePosition.y, Math.sqrt(relativePosition.x * relativePosition.x + relativePosition.z * relativePosition.z)) * (180 / Math.PI);
+    const cameraRotationZ = camera.rotation.z * (180 / Math.PI);
 
     // Frame selection, sprite rotation and mirroring
     let frameIndex;
     let rotationDegree = 0;
     let mirror = false;
 
-    if (angleToCamera >= 0 && angleToCamera <= 90) {
-        frameIndex = Math.floor(wheelFramesPerColumn - (angleToCamera / 90) * wheelFramesPerColumn);
-    } else if (angleToCamera > -90 && angleToCamera < 0) {
-        frameIndex = Math.floor(wheelFramesPerColumn - (-angleToCamera / 90) * wheelFramesPerColumn);
+    if (angleToCameraX >= 0 && angleToCameraX <= 90) {
+        frameIndex = Math.floor(wheelFramesPerColumn - (angleToCameraX / 90) * wheelFramesPerColumn);
+    } else if (angleToCameraX > -90 && angleToCameraX < 0) {
+        frameIndex = Math.floor(wheelFramesPerColumn - (-angleToCameraX / 90) * wheelFramesPerColumn);
         rotationDegree = 180;
-    } else if (angleToCamera > -180 && angleToCamera < -90) {
-        frameIndex = Math.floor(wheelFramesPerColumn - ((180 + angleToCamera) / 90) * wheelFramesPerColumn);
+    } else if (angleToCameraX > -180 && angleToCameraX < -90) {
+        frameIndex = Math.floor(wheelFramesPerColumn - ((180 + angleToCameraX) / 90) * wheelFramesPerColumn);
         rotationDegree = 180;
         mirror = true;
-    } else if (angleToCamera > 90 && angleToCamera < 180) {
-        frameIndex = Math.floor(wheelFramesPerColumn - ((180 - angleToCamera) / 90) * wheelFramesPerColumn);
+    } else if (angleToCameraX > 90 && angleToCameraX < 180) {
+        frameIndex = Math.floor(wheelFramesPerColumn - ((180 - angleToCameraX) / 90) * wheelFramesPerColumn);
         mirror = true;
     }
 
     // TODO: There should be a better interpolated rotation imo
     const INTERPOLATION_START_ANGLE = 20; // I don't know since which angle it starts rotating inside the game, im confused
-    const INTERPOLATION_STEP_VALUE = 0.1;
-    let factor = 0
-    if (angleToCamera >= 0 && angleToCamera < INTERPOLATION_START_ANGLE) {
-        factor = normalize(INTERPOLATION_START_ANGLE, angleToCamera, 0);
-        factor = closestStepValue(factor, INTERPOLATION_STEP_VALUE) // Make the rotation more choppy to eliminate the smoothiness and/or replicate the low-fps of the spritesheet
-        rotationDegree = THREE.MathUtils.lerp(-180, 0, easeInOutSine(1.0 - factor));
-    } else if (angleToCamera >= -180 && angleToCamera <= (-180 + INTERPOLATION_START_ANGLE)) {
-        factor = normalize((-180 + INTERPOLATION_START_ANGLE), angleToCamera, -180);
-        factor = closestStepValue(factor, INTERPOLATION_STEP_VALUE) // Make the rotation more choppy to eliminate the smoothiness and/or replicate the low-fps of the spritesheet
-        rotationDegree = THREE.MathUtils.lerp(0, 180, easeInOutSine(1.0 - factor));
+    const INTERPOLATION_STEP_VALUE = 0.1; // Make the rotation more choppy to eliminate the smoothiness and/or replicate the low-fps of the spritesheet
+    let rotationFactor = 0
+    if (angleToCameraX >= 0 && angleToCameraX < INTERPOLATION_START_ANGLE) {
+        rotationFactor = normalize(INTERPOLATION_START_ANGLE, angleToCameraX, 0);
+        rotationFactor = closestStepValue(rotationFactor, INTERPOLATION_STEP_VALUE) 
+        rotationDegree = THREE.MathUtils.lerp(-180, 0, easeInOutSine(1.0 - rotationFactor));
+    } else if (angleToCameraX >= -180 && angleToCameraX <= (-180 + INTERPOLATION_START_ANGLE)) {
+        rotationFactor = normalize((-180 + INTERPOLATION_START_ANGLE), angleToCameraX, -180);
+        rotationFactor = closestStepValue(rotationFactor, INTERPOLATION_STEP_VALUE)
+        rotationDegree = THREE.MathUtils.lerp(0, 180, easeInOutSine(1.0 - rotationFactor));
     }
 
     // Debugging text -- Laggy asfuck
     if (enableDebugShit) {
-        wheelGroup.children[3].text = `Wheel #${wheelGroup.name}\nAngle: ${angleToCamera.toFixed(1)}\nFrame: ${frameIndex}\nFactor: ${factor}\nRotation: ${rotationDegree.toFixed(2)}\nMirror: ${mirror}`
+        wheelGroup.children[3].text = `Wheel #${wheelGroup.name}\nAngle X: ${angleToCameraX.toFixed(0)}\nAngle Y: ${angleToCameraY.toFixed(0)}\nCamera angle: ${cameraRotationZ.toFixed(0)}\nFrame: ${frameIndex}\nFactor: ${rotationFactor.toFixed(2)}\nRotation: ${rotationDegree.toFixed(0)}\nisMirror: ${mirror}`
     } else {
         wheelGroup.children[3].text = ""
     }
@@ -303,16 +305,13 @@ controls.target = kartGroup.position.clone().add(new THREE.Vector3(0, 0.5, 0)) /
 
 // Function to handle key presses
 function onKeyDown(event) {
-    if (event.key == "z")
-        toggleDebugShit()
-    if (event.key == "x")
-        controls.autoRotate = !controls.autoRotate
+    if (event.key == "z") toggleDebugShit()
+    if (event.key == "x") controls.autoRotate = !controls.autoRotate
+    if (event.key == " ") console.log(kartGroup.children[1].children[3].text.replaceAll("\n", ", "))
     if (event.key == "c") {
         camera.position.set(0, 0, 2);
         controls.update();
     }
-    if (event.key == " ")
-        console.log(kartGroup.children[4].children[2].text.replaceAll("\n", ", "))
 }
 document.addEventListener('keydown', onKeyDown, false);
 
