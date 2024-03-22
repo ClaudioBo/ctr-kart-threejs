@@ -12,7 +12,7 @@ Wheel sprites ripped by me and uploaded to [The Spriters Resource](https://www.s
 1. **Number of Sprites:** There are 16 sprites stored in the PSX VRAM.  
    ![Wheel spritesheet](/assets/img/wheel-spritesheet.png)
 
-2. **Animation Details:** The sprite animation consists of 16 frames, depicting a pre-rendered wheel panning from 0° to 90°.
+2. **Animation Details:** The sprite animation consists of 17 frames, depicting a pre-rendered wheel panning from 0° to 90°.
 
 3. **Rotation Behavior:** If the camera viewing angle of the wheel exceeds 90°, the sprite rotates 180°, and the animation plays in reverse.
 
