@@ -1,40 +1,104 @@
 // Import Three.js
 import * as THREE from 'three';
 import SpriteText from 'three-spritetext';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import Stats from 'three/addons/libs/stats.module.js';
 
 // Setup everything
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 1.5;
 
+// const camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000 );
+// camera.position.x = 4;
+// camera.position.y = 0;
+// camera.position.z = 0;
+// camera.zoom = 250
+// camera.zoom = 500
+// camera.updateProjectionMatrix()
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.x = 2
+camera.position.y = 1.5
+
+// Setup renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-window.addEventListener('resize', onWindowResize, false);
+const stats = new Stats();
+document.body.appendChild(stats.dom);
 
+// Setup resize
+window.addEventListener('resize', onWindowResize, false);
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+// Add an ambient light to the scene for overall illumination
+// This light intensity almost matches the model textures hex models without vertex coloring enabled
+const ambientLight = new THREE.AmbientLight(0xffffff, 5);
+scene.add(ambientLight);
+
+// Create kart group
 const kartGroup = new THREE.Group()
+
+// Function to load kart model and materials
+const loadKartModelOBJ = async () => {
+    // Instanciate the loaders
+    const mtlLoader = new MTLLoader();
+    const objLoader = new OBJLoader();
+
+    // Load the materials file
+    const materials = await new Promise((resolve, reject) => {
+        mtlLoader.load('/assets/models/crash_obj/crash.mtl', resolve);
+    });
+
+    // Preload materials
+    materials.preload()
+
+    // Set the materials to the object loader
+    objLoader.setMaterials(materials);
+
+    // Load the object file
+    const object = await new Promise((resolve, reject) => {
+        objLoader.load('/assets/models/crash_obj/crash.obj', resolve);
+    });
+
+    // Loop through each material and apply modifications
+    // traverse was needed because iterating with forEach didn't work haha
+    object.traverse(child => {
+        if (child instanceof THREE.Mesh) {
+            if (Array.isArray(child.material)) {
+                child.material.forEach(material => {
+                    // Enable material vertex colors
+                    // This fucks up some textures making them darker
+                    material.vertexColors = true
+                    if (!!material.map) {
+                        material.map.magFilter = THREE.NearestFilter;
+                        material.map.minFilter = THREE.NearestFilter;
+                    }
+                });
+            }
+        }
+    });
+    return object;
+}
+
+// Load kart and save into a variable
+const kartModel = await loadKartModelOBJ();
 
 // Function to create the kart
 const createKart = () => {
-    const mainKartMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
-    const mainKartWireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
-    const mainKartGeometry = new THREE.BoxGeometry(2, 0.1, 1);
-    const mainKartMesh = new THREE.Mesh(mainKartGeometry, mainKartMaterial);
-    const mainKartWireframe = new THREE.Mesh(mainKartGeometry, mainKartWireframeMaterial);
+    const mainKartGroup = kartModel.clone()
     const mainKartAxesHelper = new THREE.AxesHelper(1)
-    mainKartMesh.add(mainKartWireframe);
-    mainKartMesh.add(mainKartAxesHelper)
-    kartGroup.add(mainKartMesh); // Add mainKart to the group
+    mainKartGroup.add(mainKartAxesHelper)
+    kartGroup.add(mainKartGroup); // Add mainKart to the group
 }
+
 createKart()
 
 // Create a template group that would store a Sprite and DebugSquare
@@ -65,9 +129,13 @@ const createWheel = () => {
     textSprite.strokeColor = "black"
     textSprite.strokeWidth = 1
 
+    // Axes just to position the wheels by eye lol
+    const axesHelper = new THREE.AxesHelper(0.5)
+
     wheelGroup.add(wheelSprite)
     wheelGroup.add(debugSquareMesh)
     wheelGroup.add(textSprite)
+    wheelGroup.add(axesHelper)
 
     return wheelGroup
 }
@@ -122,14 +190,13 @@ function updateKartChildPositions() {
     const mainKart = kartGroup.children[0];
 
     // Calculate the positions of wheel group relative to the main kart's local space
-    const offsetX = 0.74;
-    const offsetY = -0;
-    const offsetZ = 0.65;
+    const offsetX = 0.62;
+    const offsetY = 0.25;
     const wheelLocalPositions = [
-        new THREE.Vector3(-offsetX, offsetY, -offsetZ),
-        new THREE.Vector3(offsetX, offsetY, -offsetZ),
-        new THREE.Vector3(-offsetX, offsetY, offsetZ),
-        new THREE.Vector3(offsetX, offsetY, offsetZ),
+        new THREE.Vector3(-offsetX, offsetY, -0.40,),
+        new THREE.Vector3(-offsetX, offsetY, 0.80,),
+        new THREE.Vector3(offsetX, offsetY, -0.40,),
+        new THREE.Vector3(offsetX, offsetY, 0.80,),
     ];
 
     // Update positions and rotations for the wheel group
@@ -192,7 +259,7 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
         frameIndex = Math.floor(((-angleToCamera) / 90) * wheelFramesPerColumn);
     }
 
-    // TODO: Better interpolated rotation
+    // TODO: Better interpolated sprite rotation
     const INTERPOLATION_START_ANGLE = 75;
     let factor = 0
     if (angleToCamera > INTERPOLATION_START_ANGLE && angleToCamera < 90) {
@@ -204,7 +271,7 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
     }
 
     // Debugging text
-    wheelGroup.children[2].text = `Angle: ${angleToCamera.toFixed(1)}\nFrame: ${frameIndex}\nRotation: ${rotationDegree.toFixed(2)}\nMirror: ${mirror}`
+    wheelGroup.children[2].text = `Wheel #${wheelGroup.name}\nAngle: ${angleToCamera.toFixed(1)}\nFrame: ${frameIndex}\nRotation: ${rotationDegree.toFixed(2)}\nMirror: ${mirror}`
 
     // Update the frame for the current wheel
     setSpriteFrame(wheelGroup.children[0], frameIndex, mirror, rotationDegree);
@@ -212,6 +279,7 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true
+controls.autoRotate = true
 
 // Function to handle key presses
 function onKeyDown(event) {
@@ -224,7 +292,6 @@ function onKeyDown(event) {
     if (event.key == " ")
         console.log(kartGroup.children[4].children[2].text.replaceAll("\n", ", "))
 }
-
 document.addEventListener('keydown', onKeyDown, false);
 
 // Function to animate the scene
@@ -233,6 +300,7 @@ function animate() {
     updateKartWheelFrames()
 
     controls.update();
+    stats.update();
 
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
