@@ -270,17 +270,17 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
         mirror = true;
     }
 
-    // TODO: Better interpolated sprite rotation
-    const INTERPOLATION_START_ANGLE = 20; // I don't know sinch which angle it starts rotating, im confused
-    const INTERPOLATION_STEP_VALUE = 0.05;
+    // TODO: There should be a better interpolated rotation imo
+    const INTERPOLATION_START_ANGLE = 20; // I don't know since which angle it starts rotating inside the game, im confused
+    const INTERPOLATION_STEP_VALUE = 0.1;
     let factor = 0
     if (angleToCamera >= 0 && angleToCamera < INTERPOLATION_START_ANGLE) {
         factor = normalize(INTERPOLATION_START_ANGLE, angleToCamera, 0);
-        factor = closestStepValue(factor, INTERPOLATION_STEP_VALUE)
+        factor = closestStepValue(factor, INTERPOLATION_STEP_VALUE) // Make the rotation more choppy to eliminate the smoothiness and/or replicate the low-fps of the spritesheet
         rotationDegree = THREE.MathUtils.lerp(-180, 0, easeInOutSine(1.0 - factor));
     } else if (angleToCamera >= -180 && angleToCamera <= (-180 + INTERPOLATION_START_ANGLE)) {
         factor = normalize((-180 + INTERPOLATION_START_ANGLE), angleToCamera, -180);
-        factor = closestStepValue(factor, INTERPOLATION_STEP_VALUE)
+        factor = closestStepValue(factor, INTERPOLATION_STEP_VALUE) // Make the rotation more choppy to eliminate the smoothiness and/or replicate the low-fps of the spritesheet
         rotationDegree = THREE.MathUtils.lerp(0, 180, easeInOutSine(1.0 - factor));
     }
 
