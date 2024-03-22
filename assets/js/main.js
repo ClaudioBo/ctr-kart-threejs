@@ -8,8 +8,11 @@ import Stats from 'three/addons/libs/stats.module.js';
 
 // Setup everything
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1e1e1e)
+let enableDebugShit = true
 
-// const camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000 );
+// // Setup Orthographic Camera
+// const camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000);
 // camera.position.x = 4;
 // camera.position.y = 0;
 // camera.position.z = 0;
@@ -17,9 +20,10 @@ const scene = new THREE.Scene();
 // camera.zoom = 500
 // camera.updateProjectionMatrix()
 
+// Setup Normal Camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.x = 2
-camera.position.y = 1.5
+camera.position.z = -1.5
+camera.position.y = 1
 
 // Setup renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -39,8 +43,8 @@ function onWindowResize() {
 }
 
 // Add an ambient light to the scene for overall illumination
-// This light intensity almost matches the model textures hex models without vertex coloring enabled
-const ambientLight = new THREE.AmbientLight(0xffffff, 5);
+// This light intensity matches the model hex colors
+const ambientLight = new THREE.AmbientLight(0xffffff, 12.6);
 scene.add(ambientLight);
 
 // Create kart group
@@ -75,8 +79,8 @@ const loadKartModelOBJ = async () => {
             if (Array.isArray(child.material)) {
                 child.material.forEach(material => {
                     // Enable material vertex colors
-                    // This fucks up some textures making them darker
                     material.vertexColors = true
+                    // Disable texture filtering
                     if (!!material.map) {
                         material.map.magFilter = THREE.NearestFilter;
                         material.map.minFilter = THREE.NearestFilter;
@@ -93,8 +97,8 @@ const kartModel = await loadKartModelOBJ();
 
 // Function to create the kart
 const createKart = () => {
-    const mainKartGroup = kartModel.clone()
     const mainKartAxesHelper = new THREE.AxesHelper(1)
+    const mainKartGroup = kartModel.clone()
     mainKartGroup.add(mainKartAxesHelper)
     kartGroup.add(mainKartGroup); // Add mainKart to the group
 }
@@ -134,8 +138,8 @@ const createWheel = () => {
 
     wheelGroup.add(wheelSprite)
     wheelGroup.add(debugSquareMesh)
-    wheelGroup.add(textSprite)
     wheelGroup.add(axesHelper)
+    wheelGroup.add(textSprite)
 
     return wheelGroup
 }
@@ -225,14 +229,18 @@ function updateKartWheelFrames() {
 }
 
 // Helper functions for easing
-function easeInOut(t) {
-    t = Math.max(0, Math.min(1, t));
-    return t < 0.5 ? 0.5 * Math.pow(2 * t, 2) : 0.5 * (2 - Math.pow(2 * (1 - t), 2));
+function easeInOutSine(t) {
+    return (1 - Math.cos(Math.PI * t)) / 2;
 }
 
 // Helper functions for normalizing values
 function normalize(initial_value, current_value, max_value) {
     return (current_value - initial_value) / (max_value - initial_value);
+}
+
+// Helper function to make a value close to a step value
+function closestStepValue(value, step) {
+    return Math.round(value / step) * step
 }
 
 function changeWheelSpriteBasedOnCamera(wheelGroup) {
@@ -246,32 +254,39 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
     let mirror = false;
 
     if (angleToCamera >= 0 && angleToCamera <= 90) {
-        frameIndex = Math.floor((angleToCamera / 90) * wheelFramesPerColumn);
-        mirror = true;
-    } else if (angleToCamera > 90 && angleToCamera <= 180) {
-        frameIndex = Math.floor(((180 - angleToCamera) / 90) * wheelFramesPerColumn);
-        rotationDegree = 180;
-        mirror = true;
-    } else if (angleToCamera > -180 && angleToCamera <= -90) {
-        frameIndex = Math.floor(((180 + angleToCamera) / 90) * wheelFramesPerColumn);
-        rotationDegree = 180;
+        frameIndex = Math.floor(wheelFramesPerColumn - (angleToCamera / 90) * wheelFramesPerColumn);
     } else if (angleToCamera > -90 && angleToCamera < 0) {
-        frameIndex = Math.floor(((-angleToCamera) / 90) * wheelFramesPerColumn);
+        frameIndex = Math.floor(wheelFramesPerColumn - (-angleToCamera / 90) * wheelFramesPerColumn);
+        rotationDegree = 180;
+    } else if (angleToCamera > -180 && angleToCamera < -90) {
+        frameIndex = Math.floor(wheelFramesPerColumn - ((180 + angleToCamera) / 90) * wheelFramesPerColumn);
+        rotationDegree = 180;
+        mirror = true;
+    } else if (angleToCamera > 90 && angleToCamera < 180) {
+        frameIndex = Math.floor(wheelFramesPerColumn - ((180 - angleToCamera) / 90) * wheelFramesPerColumn);
+        mirror = true;
     }
 
     // TODO: Better interpolated sprite rotation
-    const INTERPOLATION_START_ANGLE = 75;
+    const INTERPOLATION_START_ANGLE = 20; // I don't know sinch which angle it starts rotating, im confused
+    const INTERPOLATION_STEP_VALUE = 0.05;
     let factor = 0
-    if (angleToCamera > INTERPOLATION_START_ANGLE && angleToCamera < 90) {
-        factor = normalize(INTERPOLATION_START_ANGLE, angleToCamera, 90);
-        rotationDegree = THREE.MathUtils.lerp(180, 0, easeInOut(1.0 - factor));
-    } else if (angleToCamera > -90 && angleToCamera < -INTERPOLATION_START_ANGLE) {
-        factor = normalize(-INTERPOLATION_START_ANGLE, angleToCamera, -90);
-        rotationDegree = THREE.MathUtils.lerp(0, -180, easeInOut(factor));
+    if (angleToCamera >= 0 && angleToCamera < INTERPOLATION_START_ANGLE) {
+        factor = normalize(INTERPOLATION_START_ANGLE, angleToCamera, 0);
+        factor = closestStepValue(factor, INTERPOLATION_STEP_VALUE)
+        rotationDegree = THREE.MathUtils.lerp(-180, 0, easeInOutSine(1.0 - factor));
+    } else if (angleToCamera >= -180 && angleToCamera <= (-180 + INTERPOLATION_START_ANGLE)) {
+        factor = normalize((-180 + INTERPOLATION_START_ANGLE), angleToCamera, -180);
+        factor = closestStepValue(factor, INTERPOLATION_STEP_VALUE)
+        rotationDegree = THREE.MathUtils.lerp(0, 180, easeInOutSine(1.0 - factor));
     }
 
-    // Debugging text
-    wheelGroup.children[2].text = `Wheel #${wheelGroup.name}\nAngle: ${angleToCamera.toFixed(1)}\nFrame: ${frameIndex}\nRotation: ${rotationDegree.toFixed(2)}\nMirror: ${mirror}`
+    // Debugging text -- Laggy asfuck
+    if (enableDebugShit) {
+        wheelGroup.children[3].text = `Wheel #${wheelGroup.name}\nAngle: ${angleToCamera.toFixed(1)}\nFrame: ${frameIndex}\nFactor: ${factor}\nRotation: ${rotationDegree.toFixed(2)}\nMirror: ${mirror}`
+    } else {
+        wheelGroup.children[3].text = ""
+    }
 
     // Update the frame for the current wheel
     setSpriteFrame(wheelGroup.children[0], frameIndex, mirror, rotationDegree);
@@ -279,10 +294,14 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true
-controls.autoRotate = true
+// controls.autoRotate = true
+controls.autoRotateSpeed *= -1 // Invert rotation
+controls.target = kartGroup.position.clone().add(new THREE.Vector3(0, 0.5, 0)) // Look a little bit more up
 
 // Function to handle key presses
 function onKeyDown(event) {
+    if (event.key == "z")
+        toggleDebugShit()
     if (event.key == "x")
         controls.autoRotate = !controls.autoRotate
     if (event.key == "c") {
@@ -293,6 +312,24 @@ function onKeyDown(event) {
         console.log(kartGroup.children[4].children[2].text.replaceAll("\n", ", "))
 }
 document.addEventListener('keydown', onKeyDown, false);
+
+// Function to toggle rendering on debug shit
+function toggleDebugShit() {
+    enableDebugShit = !enableDebugShit
+
+    // Axes
+    kartGroup.children[0].children[1].visible = enableDebugShit // Kart
+    kartGroup.children[1].children[2].visible = enableDebugShit // Wheel #1
+    kartGroup.children[2].children[2].visible = enableDebugShit // Wheel #2
+    kartGroup.children[3].children[2].visible = enableDebugShit // Wheel #3
+    kartGroup.children[4].children[2].visible = enableDebugShit // Wheel #4
+
+    // Wireframe box
+    kartGroup.children[1].children[1].visible = enableDebugShit // Wheel #1
+    kartGroup.children[2].children[1].visible = enableDebugShit // Wheel #2
+    kartGroup.children[3].children[1].visible = enableDebugShit // Wheel #3
+    kartGroup.children[4].children[1].visible = enableDebugShit // Wheel #4
+}
 
 // Function to animate the scene
 function animate() {

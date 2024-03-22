@@ -6,6 +6,8 @@
 # - Just added textures/ path
 
 newmtl 674_488_39_221_16_8
+# Transparent
+d 0.99
 map_Kd textures/674_488_39_221_16_8.png
 
 newmtl 686_472_49_252_32_16
@@ -54,6 +56,8 @@ newmtl 670_472_49_250_32_16
 map_Kd textures/670_472_49_250_32_16.png
 
 newmtl 662_472_49_249_32_16
+# Transparent
+d 0.99
 map_Kd textures/662_472_49_249_32_16.png
 
 newmtl 696_496_49_507_32_16
