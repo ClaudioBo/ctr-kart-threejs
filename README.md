@@ -16,7 +16,7 @@ I'm also trying out `Three.js` so I can learn 😂
 
 ## Live example
 
-~~https://www.claudiobo.com/ctr-crash-threejs~~
+~~https://www.claudiobo.com/ctr-kart-threejs~~
 
 ## Summary of Research Findings
 
