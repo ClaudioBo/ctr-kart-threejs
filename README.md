@@ -39,7 +39,7 @@ I'm also trying out `Three.js` so I can learn 😂
 -   [x] Change sprite depending on tire object rotation
 -   [x] Import Crash Kart model
 -   [x] Change sprite depending on camera's view based on vertical axis
--   [ ] Somehow implement to the rendered how PSX renders their vertex colors for the current kart model
+-   [ ] Find a way to render the kart model correctly without maxing out the ambient light intensity
 -   [ ] Implement Smoke with togglable darkness and toggable visibility
 -   [ ] Implement Turbo animation
 -   [ ] Implement Tire's color palette modification to simulate forward motion

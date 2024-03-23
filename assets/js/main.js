@@ -53,6 +53,7 @@ async function initialize() {
 
     // Add an ambient light to the scene for overall illumination
     // This light intensity matches the model hex colors
+    // TODO: This light intensity shouldn't be too intense, makes other models too bright
     ambientLight = new THREE.AmbientLight(0xffffff, 12.6);
     scene.add(ambientLight);
 
