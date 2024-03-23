@@ -105,7 +105,14 @@ const createKart = () => {
 
 createKart()
 
-// Create a template group that would store a Sprite and DebugSquare
+// Spritesheet properties
+const wheelFramesPerColumn = 17;
+const wheelFrameWidth = 32;
+const wheelFrameHeight = 32;
+const wheelTextureWidth = 544;
+const wheelTextureHeight = 32;
+
+// Create a template group that would store the Wheel Group
 const createWheel = () => {
     // Debug square material
     const debugSquareGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
@@ -136,10 +143,14 @@ const createWheel = () => {
     // Axes just to position the wheels by eye lol
     const axesHelper = new THREE.AxesHelper(0.5)
 
+    // Add everything to the group
     wheelGroup.add(wheelSprite)
     wheelGroup.add(debugSquareMesh)
     wheelGroup.add(axesHelper)
     wheelGroup.add(textSprite)
+
+    // Set default frame
+    setSpriteFrame(wheelSprite, 0, false, 0)
 
     return wheelGroup
 }
@@ -156,13 +167,6 @@ createKartWheels()
 
 // Add the group to the scene
 scene.add(kartGroup);
-
-// Spritesheet properties
-const wheelFramesPerColumn = 17;
-const wheelFrameWidth = 32;
-const wheelFrameHeight = 32;
-const wheelTextureWidth = 544;
-const wheelTextureHeight = 32;
 
 // Function to set sprite frame
 function setSpriteFrame(sprite, frameIndex, mirror = false, rotationDegree = 0) {
@@ -247,54 +251,79 @@ function closestStepValue(value, step) {
 }
 
 function changeWheelSpriteBasedOnCamera(wheelGroup) {
-    // Calculate the angle between the camera's position and the wheel's position
-    const relativePosition = wheelGroup.position.clone().sub(camera.position);
+    // Get the world position and rotation of the wheelGroup
+    const wheelGroupWorldPosition = wheelGroup.getWorldPosition(new THREE.Vector3());
+    const wheelGroupWorldRotation = wheelGroup.getWorldQuaternion(new THREE.Quaternion());
+
+    // Calculate the relative position vector with the camera's position
+    const relativePosition = wheelGroupWorldPosition.clone().sub(camera.position);
+
+    // Apply the wheel rotation to the relative position vector
+    relativePosition.applyQuaternion(wheelGroupWorldRotation.conjugate());
+
+    // Calculate the angle in degrees to the camera on the X-Z plane
     const angleToCameraX = Math.atan2(relativePosition.z, relativePosition.x) * (180 / Math.PI);
+
+    // Calculate the angle in degrees to the camera on the Y-Z plane
     const angleToCameraY = Math.atan2(relativePosition.y, Math.sqrt(relativePosition.x * relativePosition.x + relativePosition.z * relativePosition.z)) * (180 / Math.PI);
-    const cameraRotationZ = camera.rotation.z * (180 / Math.PI);
 
-    // Frame selection, sprite rotation and mirroring
-    let frameIndex;
+    // Calculate the camera's rotation relative to the wheel direction
+    const cameraRotationZRelativeToWheel = camera.rotation.z * (180 / Math.PI) - angleToCameraX;
+
+    // Sum variables
+    const ROTATION_START_ANGLE = 35;
+    let frameIndex = 0
     let rotationDegree = 0;
-    let mirror = false;
+    let isMirror = false
 
+    // Determining isMirror based on angleToCameraX
+    if (angleToCameraX < -90 || angleToCameraX > 90) {
+        isMirror = true;
+    }
+
+    // Determining if the frame needs to be rotated
+    if (angleToCameraX < 0 && angleToCameraX > -180) {
+        rotationDegree += 180
+    }
+
+    // Select frame based on angleToCameraX
     if (angleToCameraX >= 0 && angleToCameraX <= 90) {
         frameIndex = Math.floor(wheelFramesPerColumn - (angleToCameraX / 90) * wheelFramesPerColumn);
     } else if (angleToCameraX > -90 && angleToCameraX < 0) {
         frameIndex = Math.floor(wheelFramesPerColumn - (-angleToCameraX / 90) * wheelFramesPerColumn);
-        rotationDegree = 180;
     } else if (angleToCameraX > -180 && angleToCameraX < -90) {
         frameIndex = Math.floor(wheelFramesPerColumn - ((180 + angleToCameraX) / 90) * wheelFramesPerColumn);
-        rotationDegree = 180;
-        mirror = true;
     } else if (angleToCameraX > 90 && angleToCameraX < 180) {
         frameIndex = Math.floor(wheelFramesPerColumn - ((180 - angleToCameraX) / 90) * wheelFramesPerColumn);
-        mirror = true;
     }
 
-    // TODO: There should be a better interpolated rotation imo
-    const INTERPOLATION_START_ANGLE = 20; // I don't know since which angle it starts rotating inside the game, im confused
-    const INTERPOLATION_STEP_VALUE = 0.1; // Make the rotation more choppy to eliminate the smoothiness and/or replicate the low-fps of the spritesheet
-    let rotationFactor = 0
-    if (angleToCameraX >= 0 && angleToCameraX < INTERPOLATION_START_ANGLE) {
-        rotationFactor = normalize(INTERPOLATION_START_ANGLE, angleToCameraX, 0);
-        rotationFactor = closestStepValue(rotationFactor, INTERPOLATION_STEP_VALUE) 
-        rotationDegree = THREE.MathUtils.lerp(-180, 0, easeInOutSine(1.0 - rotationFactor));
-    } else if (angleToCameraX >= -180 && angleToCameraX <= (-180 + INTERPOLATION_START_ANGLE)) {
-        rotationFactor = normalize((-180 + INTERPOLATION_START_ANGLE), angleToCameraX, -180);
-        rotationFactor = closestStepValue(rotationFactor, INTERPOLATION_STEP_VALUE)
-        rotationDegree = THREE.MathUtils.lerp(0, 180, easeInOutSine(1.0 - rotationFactor));
-    }
+    // Select the frame based on angleToCameraY
+    const heightFactor = (angleToCameraY + 90) / 180;
+    frameIndex = Math.floor(frameIndex * (1 - Math.abs(heightFactor - 0.5) * 2));
+
+    // if (angleToCameraX >= -ROTATION_START_ANGLE && angleToCameraX < ROTATION_START_ANGLE) {
+    //     const rotationFactor = normalize(ROTATION_START_ANGLE, angleToCameraX, -ROTATION_START_ANGLE);
+    //     rotationDegree = THREE.MathUtils.lerp(-180, 0, easeInOutSine(1.0 - rotationFactor));
+    // } else if (angleToCameraX < (-180 + ROTATION_START_ANGLE) || angleToCameraX > (180 - ROTATION_START_ANGLE)) {
+    //     let adjustedAngle = angleToCameraX > 0 ? angleToCameraX - 180 : angleToCameraX + 180;
+    //     const rotationFactor = normalize(ROTATION_START_ANGLE, adjustedAngle, -ROTATION_START_ANGLE);
+    //     rotationDegree = THREE.MathUtils.lerp(0, 180, easeInOutSine(1.0 - rotationFactor));
+    // }
+
+    // // Forcing rotation - use if the interpolation above is not commented lol
+    // if (angleToCameraX < -ROTATION_START_ANGLE && angleToCameraX > (-180 + ROTATION_START_ANGLE)) {
+    //     rotationDegree = 180
+    // }
 
     // Debugging text -- Laggy asfuck
-    if (enableDebugShit) {
-        wheelGroup.children[3].text = `Wheel #${wheelGroup.name}\nAngle X: ${angleToCameraX.toFixed(0)}\nAngle Y: ${angleToCameraY.toFixed(0)}\nCamera angle: ${cameraRotationZ.toFixed(0)}\nFrame: ${frameIndex}\nFactor: ${rotationFactor.toFixed(2)}\nRotation: ${rotationDegree.toFixed(0)}\nisMirror: ${mirror}`
+    if (wheelGroup.name == "0" && enableDebugShit) {
+        wheelGroup.children[3].text = `Wheel #${wheelGroup.name}\nAngle X: ${angleToCameraX.toFixed(0)}\nAngle Y: ${angleToCameraY.toFixed(0)}\nCamera angle: ${cameraRotationZRelativeToWheel.toFixed(0)}\nRotation: ${rotationDegree.toFixed(0)}\nFrame: ${frameIndex}\nisMirror: ${isMirror}`
     } else {
         wheelGroup.children[3].text = ""
     }
 
-    // Update the frame for the current wheel
-    setSpriteFrame(wheelGroup.children[0], frameIndex, mirror, rotationDegree);
+    // Update the display properties of the wheel
+    setSpriteFrame(wheelGroup.children[0], frameIndex, isMirror, rotationDegree);
 }
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -302,6 +331,13 @@ controls.enableDamping = true
 // controls.autoRotate = true
 controls.autoRotateSpeed *= -1 // Invert rotation
 controls.target = kartGroup.position.clone().add(new THREE.Vector3(0, 0.5, 0)) // Look a little bit more up
+
+// import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
+// const controls = new TrackballControls(camera, renderer.domElement);
+// controls.enableDamping = true
+// controls.rotateSpeed = 2.0;
+// controls.zoomSpeed = 1.2;
+// controls.panSpeed = 0.8;
 
 // Function to handle key presses
 function onKeyDown(event) {
@@ -335,6 +371,7 @@ function toggleDebugShit() {
 
 // Function to animate the scene
 function animate() {
+    // kartGroup.rotation.y += 0.001
     updateKartChildPositions()
     updateKartWheelFrames()
 
