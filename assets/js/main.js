@@ -29,11 +29,11 @@ let isSmokeDark = false // To be done
 let isSmokeVisible = true // To be done
 
 // Spritesheet properties
-const wheelTotalFrames = 17;
-const wheelFrameWidth = 32;
-const wheelFrameHeight = 32;
-const wheelTextureWidth = 544;
-const wheelTextureHeight = 32;
+const tireTotalFrames = 17;
+const tireFrameWidth = 32;
+const tireFrameHeight = 32;
+const tireTextureWidth = 544;
+const tireTextureHeight = 32;
 
 // Initialize everything
 async function initialize() {
@@ -81,7 +81,7 @@ async function initialize() {
     createKart()
 
     // Create 4 Kart's tires
-    createKartWheels()
+    createKartTires()
 
     // Add the Kart to the scene
     scene.add(kartGroup);
@@ -180,23 +180,23 @@ function createKart() {
 }
 
 // Create Tire group to clone later
-function createWheel() {
+function createTire() {
     // Debug square material
     const debugSquareGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
     const debugSquareMaterial = new THREE.MeshBasicMaterial({ color: 0x555555, wireframe: true });
 
-    // Wheel material
-    const wheelSpriteTexture = new THREE.TextureLoader().load('/assets/img/wheel-spritesheet.png');
-    wheelSpriteTexture.magFilter = THREE.NearestFilter;
-    wheelSpriteTexture.minFilter = THREE.NearestFilter;
-    wheelSpriteTexture.colorSpace = THREE.SRGBColorSpace;
-    const wheelSpriteMaterial = new THREE.SpriteMaterial({ map: wheelSpriteTexture });
+    // Tire material
+    const tireSpriteTexture = new THREE.TextureLoader().load('/assets/img/tire-spritesheet.png');
+    tireSpriteTexture.magFilter = THREE.NearestFilter;
+    tireSpriteTexture.minFilter = THREE.NearestFilter;
+    tireSpriteTexture.colorSpace = THREE.SRGBColorSpace;
+    const tireSpriteMaterial = new THREE.SpriteMaterial({ map: tireSpriteTexture });
 
-    // Wheel group
-    const wheelGroup = new THREE.Group()
+    // Tire group
+    const tireGroup = new THREE.Group()
 
-    const wheelSprite = new THREE.Sprite(wheelSpriteMaterial);
-    wheelSprite.scale.set(0.45, 0.45, 1);
+    const tireSprite = new THREE.Sprite(tireSpriteMaterial);
+    tireSprite.scale.set(0.45, 0.45, 1);
 
     // Debug wireframe
     const debugSquareMesh = new THREE.Mesh(debugSquareGeometry, debugSquareMaterial);
@@ -207,7 +207,7 @@ function createWheel() {
     textSprite.strokeColor = "black"
     textSprite.strokeWidth = 1
 
-    // Axes just to position the wheels by eye lol
+    // Axes just to position the tires by eye lol
     const axesHelper = new THREE.AxesHelper(0.5)
 
     // Hide debug shit
@@ -215,36 +215,36 @@ function createWheel() {
     axesHelper.visible = false
 
     // Add everything to the group
-    wheelGroup.add(wheelSprite)
-    wheelGroup.add(debugSquareMesh)
-    wheelGroup.add(axesHelper)
-    wheelGroup.add(textSprite)
+    tireGroup.add(tireSprite)
+    tireGroup.add(debugSquareMesh)
+    tireGroup.add(axesHelper)
+    tireGroup.add(textSprite)
 
     // Set default frame
-    setSpriteFrame(wheelSprite, 0, false, 0)
+    setSpriteFrame(tireSprite, 0, false, 0)
 
-    return wheelGroup
+    return tireGroup
 }
 
 // Create 4 Kart's tires
-function createKartWheels() {
+function createKartTires() {
     for (let i = 0; i < 4; i++) {
-        const wheelNew = createWheel()
-        wheelNew.name = i
-        kartGroup.add(wheelNew)
+        const tireNew = createTire()
+        tireNew.name = i
+        kartGroup.add(tireNew)
     }
 }
 
 // Function to set sprite frame, mirroring and rotation
 function setSpriteFrame(sprite, frameIndex, mirror = false, rotationDegree = 0) {
-    const x = (frameIndex % wheelTotalFrames) * wheelFrameWidth;
-    const y = Math.floor(frameIndex / wheelTotalFrames) * wheelFrameHeight;
+    const x = (frameIndex % tireTotalFrames) * tireFrameWidth;
+    const y = Math.floor(frameIndex / tireTotalFrames) * tireFrameHeight;
 
     // Calculate texture offsets and repeats
-    const offsetX = x / wheelTextureWidth;
-    const offsetY = 1 - (y + wheelFrameHeight) / wheelTextureHeight;
-    const repeatX = wheelFrameWidth / wheelTextureWidth;
-    const repeatY = wheelFrameHeight / wheelTextureHeight;
+    const offsetX = x / tireTextureWidth;
+    const offsetY = 1 - (y + tireFrameHeight) / tireTextureHeight;
+    const repeatX = tireFrameWidth / tireTextureWidth;
+    const repeatY = tireFrameHeight / tireTextureHeight;
 
     // Set texture coordinates
     sprite.material.map.offset.set(offsetX, offsetY);
@@ -265,41 +265,41 @@ function updateKartChildPositions() {
     // Update position and rotation for the main kart
     const mainKart = kartGroup.children[0];
 
-    // Calculate the positions of wheel group relative to the main kart's local space
+    // Calculate the positions of tire group relative to the main kart's local space
     const offsetY = 0.25;
     const backOffsetX = 0.575;
     const frontOffsetX = 0.575;
     const backOffsetZ = 0.4;
     const frontOffsetZ = 0.8;
-    const wheelLocalPositions = [
+    const tireLocalPositions = [
         new THREE.Vector3(-backOffsetX, offsetY, -backOffsetZ,), // Back right
         new THREE.Vector3(-frontOffsetX, offsetY, frontOffsetZ,), // Front right
         new THREE.Vector3(backOffsetX, offsetY, -backOffsetZ,), // Back left
         new THREE.Vector3(frontOffsetX, offsetY, frontOffsetZ,), // Front left
     ];
 
-    // Update positions and rotations for the wheel group
+    // Update positions and rotations for the tire group
     for (let i = 1; i <= 4; i++) {
-        const wheelGroup = kartGroup.children[i]
+        const tireGroup = kartGroup.children[i]
 
-        const wheelLocalPosition = wheelLocalPositions[i - 1];
+        const tireLocalPosition = tireLocalPositions[i - 1];
 
-        // Apply main kart's rotation to wheel local position
-        const rotatedWheelLocalPosition = wheelLocalPosition.clone().applyQuaternion(mainKart.quaternion);
+        // Apply main kart's rotation to tire local position
+        const rotatedTireLocalPosition = tireLocalPosition.clone().applyQuaternion(mainKart.quaternion);
 
         // Calculate position in world space
-        const wheelPosition = mainKart.position.clone().add(rotatedWheelLocalPosition);
+        const tirePosition = mainKart.position.clone().add(rotatedTireLocalPosition);
 
         // Set positions
-        wheelGroup.position.copy(wheelPosition);
+        tireGroup.position.copy(tirePosition);
     }
 }
 
-// Functions to update the frame for each wheel based on the camera's view
-function updateKartWheelFrames() {
+// Functions to update the frame for each tire based on the camera's view
+function updateKartTireFrames() {
     for (let i = 1; i <= 4; i++) {
-        const wheelGroup = kartGroup.children[i];
-        changeWheelSpriteBasedOnCamera(wheelGroup)
+        const tireGroup = kartGroup.children[i];
+        changeTireSpriteBasedOnCamera(tireGroup)
     }
 }
 
@@ -308,16 +308,16 @@ function closestStepValue(value, step) {
     return Math.round(value / step) * step
 }
 
-function changeWheelSpriteBasedOnCamera(wheelGroup) {
-    // Get the world position and rotation of the wheelGroup
-    const wheelGroupWorldPosition = wheelGroup.getWorldPosition(new THREE.Vector3());
-    const wheelGroupWorldRotation = wheelGroup.getWorldQuaternion(new THREE.Quaternion());
+function changeTireSpriteBasedOnCamera(tireGroup) {
+    // Get the world position and rotation of the tireGroup
+    const tireGroupWorldPosition = tireGroup.getWorldPosition(new THREE.Vector3());
+    const tireGroupWorldRotation = tireGroup.getWorldQuaternion(new THREE.Quaternion());
 
     // Calculate the relative position vector with the camera's position
-    const relativePosition = wheelGroupWorldPosition.clone().sub(camera.position);
+    const relativePosition = tireGroupWorldPosition.clone().sub(camera.position);
 
-    // Apply the wheel rotation to the relative position vector
-    relativePosition.applyQuaternion(wheelGroupWorldRotation.conjugate());
+    // Apply the tire rotation to the relative position vector
+    relativePosition.applyQuaternion(tireGroupWorldRotation.conjugate());
 
     // Calculate the angle in degrees to the camera on the X-Z plane
     const angleToCameraX = Math.atan2(relativePosition.z, relativePosition.x) * (180 / Math.PI);
@@ -338,9 +338,9 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
     // I'll get the closest step value to make the rotations more choppy on purpose
     // Kinda matching the low frames of the spritesheet, or make the rotations less noticeable
     if (choppierRotationMode == 0) {
-        rotationDegree = closestStepValue(rotationDegree, wheelTotalFrames / 2)
+        rotationDegree = closestStepValue(rotationDegree, tireTotalFrames / 2)
     } else if (choppierRotationMode == 1) {
-        rotationDegree = closestStepValue(rotationDegree, wheelTotalFrames / 1.5)
+        rotationDegree = closestStepValue(rotationDegree, tireTotalFrames / 1.5)
     }
 
     // Determining mirroring the frame based on angleToCameraX
@@ -350,13 +350,13 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
 
     // Select frame based on angleToCameraX
     if (angleToCameraX >= 0 && angleToCameraX <= 90) {
-        frameIndex = Math.floor(wheelTotalFrames - (angleToCameraX / 90) * wheelTotalFrames);
+        frameIndex = Math.floor(tireTotalFrames - (angleToCameraX / 90) * tireTotalFrames);
     } else if (angleToCameraX > -90 && angleToCameraX < 0) {
-        frameIndex = Math.floor(wheelTotalFrames - (-angleToCameraX / 90) * wheelTotalFrames);
+        frameIndex = Math.floor(tireTotalFrames - (-angleToCameraX / 90) * tireTotalFrames);
     } else if (angleToCameraX > -180 && angleToCameraX < -90) {
-        frameIndex = Math.floor(wheelTotalFrames - ((180 + angleToCameraX) / 90) * wheelTotalFrames);
+        frameIndex = Math.floor(tireTotalFrames - ((180 + angleToCameraX) / 90) * tireTotalFrames);
     } else if (angleToCameraX > 90 && angleToCameraX < 180) {
-        frameIndex = Math.floor(wheelTotalFrames - ((180 - angleToCameraX) / 90) * wheelTotalFrames);
+        frameIndex = Math.floor(tireTotalFrames - ((180 - angleToCameraX) / 90) * tireTotalFrames);
     }
 
     // Select the frame based on angleToCameraY
@@ -364,14 +364,14 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
     frameIndex = Math.floor(frameIndex * (1 - Math.abs(heightFactor - 0.5) * 2));
 
     // Debugging text -- Laggy asfuck
-    if (wheelGroup.name == "0" && enableDebugShit) {
-        wheelGroup.children[3].text = `Wheel #${wheelGroup.name}\nAngle X: ${angleToCameraX.toFixed(0)}\nAngle Y: ${angleToCameraY.toFixed(0)}\nCamera angle: ${cameraRotationZ.toFixed(0)}\nRotation: ${rotationDegree.toFixed(0)}\nFrame: ${frameIndex.toFixed(0)}\nisMirror: ${isMirror}`
+    if (tireGroup.name == "0" && enableDebugShit) {
+        tireGroup.children[3].text = `Tire #${tireGroup.name}\nAngle X: ${angleToCameraX.toFixed(0)}\nAngle Y: ${angleToCameraY.toFixed(0)}\nCamera angle: ${cameraRotationZ.toFixed(0)}\nRotation: ${rotationDegree.toFixed(0)}\nFrame: ${frameIndex.toFixed(0)}\nisMirror: ${isMirror}`
     } else {
-        wheelGroup.children[3].text = ""
+        tireGroup.children[3].text = ""
     }
 
-    // Update the display properties of the wheel
-    setSpriteFrame(wheelGroup.children[0], frameIndex, isMirror, rotationDegree);
+    // Update the display properties of the tire
+    setSpriteFrame(tireGroup.children[0], frameIndex, isMirror, rotationDegree);
 }
 
 // Function to toggle rendering on debug shit
@@ -380,16 +380,16 @@ function toggleDebugShit() {
 
     // Axes
     kartGroup.children[0].children[1].visible = enableDebugShit // Kart
-    kartGroup.children[1].children[2].visible = enableDebugShit // Wheel #1
-    kartGroup.children[2].children[2].visible = enableDebugShit // Wheel #2
-    kartGroup.children[3].children[2].visible = enableDebugShit // Wheel #3
-    kartGroup.children[4].children[2].visible = enableDebugShit // Wheel #4
+    kartGroup.children[1].children[2].visible = enableDebugShit // Tire #1
+    kartGroup.children[2].children[2].visible = enableDebugShit // Tire #2
+    kartGroup.children[3].children[2].visible = enableDebugShit // Tire #3
+    kartGroup.children[4].children[2].visible = enableDebugShit // Tire #4
 
     // Wireframe box
-    kartGroup.children[1].children[1].visible = enableDebugShit // Wheel #1
-    kartGroup.children[2].children[1].visible = enableDebugShit // Wheel #2
-    kartGroup.children[3].children[1].visible = enableDebugShit // Wheel #3
-    kartGroup.children[4].children[1].visible = enableDebugShit // Wheel #4
+    kartGroup.children[1].children[1].visible = enableDebugShit // Tire #1
+    kartGroup.children[2].children[1].visible = enableDebugShit // Tire #2
+    kartGroup.children[3].children[1].visible = enableDebugShit // Tire #3
+    kartGroup.children[4].children[1].visible = enableDebugShit // Tire #4
     writeDebugText()
 }
 
@@ -423,7 +423,7 @@ function writeDebugText() {
 // Loop function
 function animate() {
     updateKartChildPositions()
-    updateKartWheelFrames()
+    updateKartTireFrames()
 
     controls.update();
     stats.update();
