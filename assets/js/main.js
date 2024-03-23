@@ -6,53 +6,131 @@ import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import Stats from 'three/addons/libs/stats.module.js';
 
-// Setup everything
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1e1e1e)
-let enableDebugShit = true
+// ThreeJS variables
+let renderer;
+let stats;
+let ambientLight;
 
-// // Setup Orthographic Camera
-// const camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000);
-// camera.position.x = 4;
-// camera.position.y = 0;
-// camera.position.z = 0;
-// camera.zoom = 250
-// camera.zoom = 500
-// camera.updateProjectionMatrix()
+// General variables
+let scene;
+let camera;
+let controls;
+let kartGroup;
 
-// Setup Normal Camera
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.x = -1.5
-camera.position.y = 1
+// Preloaded stuff
+let kartModel;
 
-// Setup renderer
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+// Properties
+let enableDebugShit = false
+let choppierRotationMode = 0
+let isSoundEnabled = false // To be done
+let isAccelerating = false // To be done
+let isSmokeDark = false // To be done
+let isSmokeVisible = true // To be done
 
-const stats = new Stats();
-document.body.appendChild(stats.dom);
+// Spritesheet properties
+const wheelTotalFrames = 17;
+const wheelFrameWidth = 32;
+const wheelFrameHeight = 32;
+const wheelTextureWidth = 544;
+const wheelTextureHeight = 32;
 
-// Setup resize
-window.addEventListener('resize', onWindowResize, false);
+// Initialize everything
+async function initialize() {
+    // Setup renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Setup stats counter
+    stats = new Stats();
+    document.body.appendChild(stats.dom);
+
+    // Setup scene
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1e1e1e)
+
+    // Add an ambient light to the scene for overall illumination
+    // This light intensity matches the model hex colors
+    ambientLight = new THREE.AmbientLight(0xffffff, 12.6);
+    scene.add(ambientLight);
+
+    // Setup camera
+    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.x = 0
+    camera.position.y = 1
+    camera.position.z = -3
+    camera.updateProjectionMatrix()
+
+    // Setup camera controls
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true
+    controls.autoRotate = true
+
+    // Load model
+    kartModel = await loadKartModelOBJ();
+
+    // Create kart group
+    kartGroup = new THREE.Group()
+
+    // Make the camera look at it
+    controls.target = kartGroup.position.clone().add(new THREE.Vector3(0, 0.65, 0))
+
+    // Create kart
+    createKart()
+
+    // Create 4 Kart's tires
+    createKartWheels()
+
+    // Add the Kart to the scene
+    scene.add(kartGroup);
+
+    // Write HTML text
+    writeDebugText()
+
+    // Register all listeners
+    registerListeners();
+
+    // Start loop
+    animate();
+}
+
+// Register all listeners
+function registerListeners() {
+    window.addEventListener('resize', onWindowResize, false);
+    document.addEventListener('keydown', onKeyDown, false);
+}
+
+// Function to handle key presses
+function onKeyDown(event) {
+    if (event.key == "d") toggleDebugShit()
+    if (event.key == "x") controls.autoRotate = !controls.autoRotate; writeDebugText()
+    if (event.key == "z") {
+        camera.position.x = 0
+        camera.position.y = 1
+        camera.position.z = -3
+        camera.updateProjectionMatrix()
+        controls.target = kartGroup.position.clone().add(new THREE.Vector3(0, 0.65, 0))
+        controls.update();
+    }
+    if (event.key == "c") {
+        choppierRotationMode += 1
+        if (choppierRotationMode > 2)
+            choppierRotationMode = 0
+        writeDebugText()
+    }
+}
+
+// Resize window function
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// Add an ambient light to the scene for overall illumination
-// This light intensity matches the model hex colors
-const ambientLight = new THREE.AmbientLight(0xffffff, 12.6);
-scene.add(ambientLight);
-
-// Create kart group
-const kartGroup = new THREE.Group()
-
-// Function to load kart model and materials
-const loadKartModelOBJ = async () => {
-    // Instanciate the loaders
+// Load kart model and materials
+async function loadKartModelOBJ() {
     const mtlLoader = new MTLLoader();
     const objLoader = new OBJLoader();
 
@@ -92,28 +170,17 @@ const loadKartModelOBJ = async () => {
     return object;
 }
 
-// Load kart and save into a variable
-const kartModel = await loadKartModelOBJ();
-
-// Function to create the kart
-const createKart = () => {
-    const mainKartAxesHelper = new THREE.AxesHelper(1)
+// Create Kart group
+function createKart() {
     const mainKartGroup = kartModel.clone()
+    const mainKartAxesHelper = new THREE.AxesHelper(1)
+    mainKartAxesHelper.visible = false
     mainKartGroup.add(mainKartAxesHelper)
-    kartGroup.add(mainKartGroup); // Add mainKart to the group
+    kartGroup.add(mainKartGroup);
 }
 
-createKart()
-
-// Spritesheet properties
-const wheelFramesPerColumn = 17;
-const wheelFrameWidth = 32;
-const wheelFrameHeight = 32;
-const wheelTextureWidth = 544;
-const wheelTextureHeight = 32;
-
-// Create a template group that would store the Wheel Group
-const createWheel = () => {
+// Create Tire group to clone later
+function createWheel() {
     // Debug square material
     const debugSquareGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
     const debugSquareMaterial = new THREE.MeshBasicMaterial({ color: 0x555555, wireframe: true });
@@ -143,6 +210,10 @@ const createWheel = () => {
     // Axes just to position the wheels by eye lol
     const axesHelper = new THREE.AxesHelper(0.5)
 
+    // Hide debug shit
+    debugSquareMesh.visible = false
+    axesHelper.visible = false
+
     // Add everything to the group
     wheelGroup.add(wheelSprite)
     wheelGroup.add(debugSquareMesh)
@@ -155,23 +226,19 @@ const createWheel = () => {
     return wheelGroup
 }
 
-// Create 4 kart's wheels
-const createKartWheels = () => {
+// Create 4 Kart's tires
+function createKartWheels() {
     for (let i = 0; i < 4; i++) {
         const wheelNew = createWheel()
         wheelNew.name = i
         kartGroup.add(wheelNew)
     }
 }
-createKartWheels()
 
-// Add the group to the scene
-scene.add(kartGroup);
-
-// Function to set sprite frame
+// Function to set sprite frame, mirroring and rotation
 function setSpriteFrame(sprite, frameIndex, mirror = false, rotationDegree = 0) {
-    const x = (frameIndex % wheelFramesPerColumn) * wheelFrameWidth;
-    const y = Math.floor(frameIndex / wheelFramesPerColumn) * wheelFrameHeight;
+    const x = (frameIndex % wheelTotalFrames) * wheelFrameWidth;
+    const y = Math.floor(frameIndex / wheelTotalFrames) * wheelFrameHeight;
 
     // Calculate texture offsets and repeats
     const offsetX = x / wheelTextureWidth;
@@ -184,15 +251,16 @@ function setSpriteFrame(sprite, frameIndex, mirror = false, rotationDegree = 0) 
     sprite.material.map.repeat.set(repeatX, repeatY);
 
     // Rotate texture by degrees
-    sprite.material.rotation = rotationDegree * Math.PI / 180; // Convert degrees to radians for Three.js
+    sprite.material.rotation = rotationDegree * Math.PI / 180;
 
-    // Mirror texture horizontally if requested
+    // Mirror texture horizontally
     if (mirror) {
         sprite.material.map.repeat.x *= -1;
         sprite.material.map.offset.x += repeatX;
     }
 }
 
+// TODO: check this shit later bc i think it only needs to be runned once
 function updateKartChildPositions() {
     // Update position and rotation for the main kart
     const mainKart = kartGroup.children[0];
@@ -235,18 +303,6 @@ function updateKartWheelFrames() {
     }
 }
 
-// Helper functions for easing
-function easeInOutSine(t) {
-    return (1 - Math.cos(Math.PI * t)) / 2;
-}
-
-const easeInQuad = t => t * t;
-
-// Helper functions for normalizing values
-function normalize(initial_value, current_value, max_value) {
-    return (current_value - initial_value) / (max_value - initial_value);
-}
-
 // Helper function to make a value close to a step value
 function closestStepValue(value, step) {
     return Math.round(value / step) * step
@@ -269,14 +325,23 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
     // Calculate the angle in degrees to the camera on the Y-Z plane
     const angleToCameraY = Math.atan2(relativePosition.y, Math.sqrt(relativePosition.x * relativePosition.x + relativePosition.z * relativePosition.z)) * (180 / Math.PI);
 
-    // Calculate the camera's rotation
-    const cameraRotationZ = camera.rotation.z * (-180 / Math.PI);
+    // Get the camera rotation in degrees
+    const cameraRotationZ = camera.rotation.z * (180 / Math.PI);
 
     // Sum variables
-    // const ROTATION_START_ANGLE = 15;
     let frameIndex = 0
-    let rotationDegree = 0;
     let isMirror = false
+
+    // Very promising and simpler sprite rotation method...
+    let rotationDegree = 180 - cameraRotationZ;
+
+    // I'll get the closest step value to make the rotations more choppy on purpose
+    // Kinda matching the low frames of the spritesheet, or make the rotations less noticeable
+    if (choppierRotationMode == 0) {
+        rotationDegree = closestStepValue(rotationDegree, wheelTotalFrames / 2)
+    } else if (choppierRotationMode == 1) {
+        rotationDegree = closestStepValue(rotationDegree, wheelTotalFrames / 1.5)
+    }
 
     // Determining mirroring the frame based on angleToCameraX
     if (angleToCameraX < -90 || angleToCameraX > 90) {
@@ -285,58 +350,18 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
 
     // Select frame based on angleToCameraX
     if (angleToCameraX >= 0 && angleToCameraX <= 90) {
-        frameIndex = wheelFramesPerColumn - (angleToCameraX / 90) * wheelFramesPerColumn;
+        frameIndex = Math.floor(wheelTotalFrames - (angleToCameraX / 90) * wheelTotalFrames);
     } else if (angleToCameraX > -90 && angleToCameraX < 0) {
-        frameIndex = wheelFramesPerColumn - (-angleToCameraX / 90) * wheelFramesPerColumn;
+        frameIndex = Math.floor(wheelTotalFrames - (-angleToCameraX / 90) * wheelTotalFrames);
     } else if (angleToCameraX > -180 && angleToCameraX < -90) {
-        frameIndex = wheelFramesPerColumn - ((180 + angleToCameraX) / 90) * wheelFramesPerColumn;
+        frameIndex = Math.floor(wheelTotalFrames - ((180 + angleToCameraX) / 90) * wheelTotalFrames);
     } else if (angleToCameraX > 90 && angleToCameraX < 180) {
-        frameIndex = wheelFramesPerColumn - ((180 - angleToCameraX) / 90) * wheelFramesPerColumn;
+        frameIndex = Math.floor(wheelTotalFrames - ((180 - angleToCameraX) / 90) * wheelTotalFrames);
     }
 
     // Select the frame based on angleToCameraY
     const heightFactor = (angleToCameraY + 90) / 180;
-    frameIndex = frameIndex * (1 - Math.abs(heightFactor - 0.5) * 2);
-
-    // // Rotation #1: Determine the rotation based on angleToCameraX
-    // if (angleToCameraX >= -ROTATION_START_ANGLE && angleToCameraX < ROTATION_START_ANGLE) {
-    //     const rotationFactor = normalize(ROTATION_START_ANGLE, angleToCameraX, -ROTATION_START_ANGLE);
-    //     rotationDegree += THREE.MathUtils.lerp(-180, 0, 1.0 - rotationFactor);
-    // } else if (angleToCameraX < (-180 + ROTATION_START_ANGLE) || angleToCameraX > (180 - ROTATION_START_ANGLE)) {
-    //     const adjustedAngle = angleToCameraX > 0 ? angleToCameraX - 180 : angleToCameraX + 180;
-    //     const rotationFactor = normalize(ROTATION_START_ANGLE, adjustedAngle, -ROTATION_START_ANGLE);
-    //     rotationDegree += THREE.MathUtils.lerp(0, 180, 1.0 - rotationFactor);
-    // }
-
-    // // Rotation #1: Keep the rotation if the lerping has ended
-    // if (angleToCameraX < -ROTATION_START_ANGLE && angleToCameraX > (-180 + ROTATION_START_ANGLE)) {
-    //     rotationDegree += 180
-    // }
-
-    // // Auxiliary Rotation: Rotate frame on desired angles (i use this to test without the 1st rotation method)
-    // if (angleToCameraX < 0 && angleToCameraX > -180) {
-    //     rotationDegree += 180
-    // }
-
-    // // Rotation #2ish: Rotate sprite forwards if frameIndex is closer to 0
-    // const basedOnIndexFactor = normalize(0, frameIndex, wheelFramesPerColumn)
-
-    // // Rotation #2: Add more rotation based on angleToCameraY
-    // const basedOnIndexFactorInterpolated = easeInQuad(basedOnIndexFactor)
-
-    // // Rotation #2: Add more rotation depending on angleToCameraY
-    // // basedOnIndexFactor is used to cancel this rotation if frameIndex is closer to 0
-    // if (angleToCameraY > 0) {
-    //     const rotationFactor = normalize(0, angleToCameraY, 90);
-    //     rotationDegree += THREE.MathUtils.lerp(0, 90, rotationFactor) * basedOnIndexFactor;
-    // } else if (angleToCameraY <= 0) {
-    //     const rotationFactor = normalize(0, angleToCameraY, -90);
-    //     rotationDegree += THREE.MathUtils.lerp(0, -90, rotationFactor) * basedOnIndexFactor;
-    // }
-
-    // Very promising rotation: 
-    rotationDegree = 180
-    rotationDegree += cameraRotationZ
+    frameIndex = Math.floor(frameIndex * (1 - Math.abs(heightFactor - 0.5) * 2));
 
     // Debugging text -- Laggy asfuck
     if (wheelGroup.name == "0" && enableDebugShit) {
@@ -345,37 +370,9 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
         wheelGroup.children[3].text = ""
     }
 
-    // Flooring frameIndex because i've finished the calculations
-    frameIndex = Math.floor(frameIndex)
-
     // Update the display properties of the wheel
     setSpriteFrame(wheelGroup.children[0], frameIndex, isMirror, rotationDegree);
 }
-
-const controls = new OrbitControls(camera, renderer.domElement);
-// controls.enableDamping = true
-// controls.autoRotate = true
-controls.autoRotateSpeed *= -1 // Invert rotation
-controls.target = kartGroup.position.clone().add(new THREE.Vector3(-0.5750, 0.25, -0.40))
-
-// import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
-// const controls = new TrackballControls(camera, renderer.domElement);
-// controls.enableDamping = true
-// controls.rotateSpeed = 2.0;
-// controls.zoomSpeed = 1.2;
-// controls.panSpeed = 0.8;
-
-// Function to handle key presses
-function onKeyDown(event) {
-    if (event.key == "z") toggleDebugShit()
-    if (event.key == "x") controls.autoRotate = !controls.autoRotate
-    if (event.key == " ") console.log(kartGroup.children[1].children[3].text.replaceAll("\n", ", "))
-    if (event.key == "c") {
-        camera.position.set(0, 0, 2);
-        controls.update();
-    }
-}
-document.addEventListener('keydown', onKeyDown, false);
 
 // Function to toggle rendering on debug shit
 function toggleDebugShit() {
@@ -393,11 +390,38 @@ function toggleDebugShit() {
     kartGroup.children[2].children[1].visible = enableDebugShit // Wheel #2
     kartGroup.children[3].children[1].visible = enableDebugShit // Wheel #3
     kartGroup.children[4].children[1].visible = enableDebugShit // Wheel #4
+    writeDebugText()
 }
 
-// Function to animate the scene
+function writeDebugText() {
+    // Too lazy to make enums or smth
+    let choppyModeText = ""
+    if (choppierRotationMode == 0) choppyModeText = "Normal"
+    if (choppierRotationMode == 1) choppyModeText = "Choppier"
+    if (choppierRotationMode == 2) choppyModeText = "Disabled"
+
+    const lines = [
+        `[S] &mdash; Toggle sound: &mdash; ${isSoundEnabled} (check your volume) « (to be done)`,
+        `[D] &mdash; Toggle debug mode: &mdash; ${enableDebugShit}`,
+        ``,
+        `[Z] &mdash; Reset camera position`,
+        `[X] &mdash; Toggle camera autorotation: &mdash; ${controls.autoRotate}`,
+        ``,
+        `[C] &mdash; Toggle choppy sprite rotation mode: &mdash; ${choppyModeText}`,
+        ``,
+        `[V] &mdash; Toggle acceleration (sprite flicker and sound): &mdash; ${isAccelerating} « (to be done)`,
+        `[B] &mdash; Toggle smoke darkness: &mdash; ${isSmokeDark} « (to be done)`,
+        `[N] &mdash; Disable smoke sprite: &mdash; ${isSmokeVisible} « (to be done)`,
+        ``,
+        `[Space] &mdash; Turbo animation « (to be done)`,
+    ]
+
+    const output = lines.join("<br>")
+    document.getElementById("debugText").innerHTML = output
+}
+
+// Loop function
 function animate() {
-    // kartGroup.rotation.y += 0.001
     updateKartChildPositions()
     updateKartWheelFrames()
 
@@ -408,5 +432,5 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-// Start animation
-animate();
+// Start loop
+initialize()
