@@ -22,7 +22,7 @@ let enableDebugShit = true
 
 // Setup Normal Camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = -1.5
+camera.position.x = -1.5
 camera.position.y = 1
 
 // Setup renderer
@@ -205,7 +205,7 @@ function updateKartChildPositions() {
     const frontOffsetZ = 0.8;
     const wheelLocalPositions = [
         new THREE.Vector3(-backOffsetX, offsetY, -backOffsetZ,), // Back right
-        new THREE.Vector3(-frontOffsetX, offsetY, frontOffsetZ,), // Front right  
+        new THREE.Vector3(-frontOffsetX, offsetY, frontOffsetZ,), // Front right
         new THREE.Vector3(backOffsetX, offsetY, -backOffsetZ,), // Back left
         new THREE.Vector3(frontOffsetX, offsetY, frontOffsetZ,), // Front left
     ];
@@ -240,6 +240,8 @@ function easeInOutSine(t) {
     return (1 - Math.cos(Math.PI * t)) / 2;
 }
 
+const easeInQuad = t => t * t;
+
 // Helper functions for normalizing values
 function normalize(initial_value, current_value, max_value) {
     return (current_value - initial_value) / (max_value - initial_value);
@@ -267,70 +269,94 @@ function changeWheelSpriteBasedOnCamera(wheelGroup) {
     // Calculate the angle in degrees to the camera on the Y-Z plane
     const angleToCameraY = Math.atan2(relativePosition.y, Math.sqrt(relativePosition.x * relativePosition.x + relativePosition.z * relativePosition.z)) * (180 / Math.PI);
 
-    // Calculate the camera's rotation relative to the wheel direction
-    const cameraRotationZRelativeToWheel = camera.rotation.z * (180 / Math.PI) - angleToCameraX;
+    // Calculate the camera's rotation
+    const cameraRotationZ = camera.rotation.z * (-180 / Math.PI);
 
     // Sum variables
-    const ROTATION_START_ANGLE = 35;
+    // const ROTATION_START_ANGLE = 15;
     let frameIndex = 0
     let rotationDegree = 0;
     let isMirror = false
 
-    // Determining isMirror based on angleToCameraX
+    // Determining mirroring the frame based on angleToCameraX
     if (angleToCameraX < -90 || angleToCameraX > 90) {
         isMirror = true;
     }
 
-    // Determining if the frame needs to be rotated
-    if (angleToCameraX < 0 && angleToCameraX > -180) {
-        rotationDegree += 180
-    }
-
     // Select frame based on angleToCameraX
     if (angleToCameraX >= 0 && angleToCameraX <= 90) {
-        frameIndex = Math.floor(wheelFramesPerColumn - (angleToCameraX / 90) * wheelFramesPerColumn);
+        frameIndex = wheelFramesPerColumn - (angleToCameraX / 90) * wheelFramesPerColumn;
     } else if (angleToCameraX > -90 && angleToCameraX < 0) {
-        frameIndex = Math.floor(wheelFramesPerColumn - (-angleToCameraX / 90) * wheelFramesPerColumn);
+        frameIndex = wheelFramesPerColumn - (-angleToCameraX / 90) * wheelFramesPerColumn;
     } else if (angleToCameraX > -180 && angleToCameraX < -90) {
-        frameIndex = Math.floor(wheelFramesPerColumn - ((180 + angleToCameraX) / 90) * wheelFramesPerColumn);
+        frameIndex = wheelFramesPerColumn - ((180 + angleToCameraX) / 90) * wheelFramesPerColumn;
     } else if (angleToCameraX > 90 && angleToCameraX < 180) {
-        frameIndex = Math.floor(wheelFramesPerColumn - ((180 - angleToCameraX) / 90) * wheelFramesPerColumn);
+        frameIndex = wheelFramesPerColumn - ((180 - angleToCameraX) / 90) * wheelFramesPerColumn;
     }
 
     // Select the frame based on angleToCameraY
     const heightFactor = (angleToCameraY + 90) / 180;
-    frameIndex = Math.floor(frameIndex * (1 - Math.abs(heightFactor - 0.5) * 2));
+    frameIndex = frameIndex * (1 - Math.abs(heightFactor - 0.5) * 2);
 
+    // // Rotation #1: Determine the rotation based on angleToCameraX
     // if (angleToCameraX >= -ROTATION_START_ANGLE && angleToCameraX < ROTATION_START_ANGLE) {
     //     const rotationFactor = normalize(ROTATION_START_ANGLE, angleToCameraX, -ROTATION_START_ANGLE);
-    //     rotationDegree = THREE.MathUtils.lerp(-180, 0, easeInOutSine(1.0 - rotationFactor));
+    //     rotationDegree += THREE.MathUtils.lerp(-180, 0, 1.0 - rotationFactor);
     // } else if (angleToCameraX < (-180 + ROTATION_START_ANGLE) || angleToCameraX > (180 - ROTATION_START_ANGLE)) {
-    //     let adjustedAngle = angleToCameraX > 0 ? angleToCameraX - 180 : angleToCameraX + 180;
+    //     const adjustedAngle = angleToCameraX > 0 ? angleToCameraX - 180 : angleToCameraX + 180;
     //     const rotationFactor = normalize(ROTATION_START_ANGLE, adjustedAngle, -ROTATION_START_ANGLE);
-    //     rotationDegree = THREE.MathUtils.lerp(0, 180, easeInOutSine(1.0 - rotationFactor));
+    //     rotationDegree += THREE.MathUtils.lerp(0, 180, 1.0 - rotationFactor);
     // }
 
-    // // Forcing rotation - use if the interpolation above is not commented lol
+    // // Rotation #1: Keep the rotation if the lerping has ended
     // if (angleToCameraX < -ROTATION_START_ANGLE && angleToCameraX > (-180 + ROTATION_START_ANGLE)) {
-    //     rotationDegree = 180
+    //     rotationDegree += 180
     // }
+
+    // // Auxiliary Rotation: Rotate frame on desired angles (i use this to test without the 1st rotation method)
+    // if (angleToCameraX < 0 && angleToCameraX > -180) {
+    //     rotationDegree += 180
+    // }
+
+    // // Rotation #2ish: Rotate sprite forwards if frameIndex is closer to 0
+    // const basedOnIndexFactor = normalize(0, frameIndex, wheelFramesPerColumn)
+
+    // // Rotation #2: Add more rotation based on angleToCameraY
+    // const basedOnIndexFactorInterpolated = easeInQuad(basedOnIndexFactor)
+
+    // // Rotation #2: Add more rotation depending on angleToCameraY
+    // // basedOnIndexFactor is used to cancel this rotation if frameIndex is closer to 0
+    // if (angleToCameraY > 0) {
+    //     const rotationFactor = normalize(0, angleToCameraY, 90);
+    //     rotationDegree += THREE.MathUtils.lerp(0, 90, rotationFactor) * basedOnIndexFactor;
+    // } else if (angleToCameraY <= 0) {
+    //     const rotationFactor = normalize(0, angleToCameraY, -90);
+    //     rotationDegree += THREE.MathUtils.lerp(0, -90, rotationFactor) * basedOnIndexFactor;
+    // }
+
+    // Very promising rotation: 
+    rotationDegree = 180
+    rotationDegree += cameraRotationZ
 
     // Debugging text -- Laggy asfuck
     if (wheelGroup.name == "0" && enableDebugShit) {
-        wheelGroup.children[3].text = `Wheel #${wheelGroup.name}\nAngle X: ${angleToCameraX.toFixed(0)}\nAngle Y: ${angleToCameraY.toFixed(0)}\nCamera angle: ${cameraRotationZRelativeToWheel.toFixed(0)}\nRotation: ${rotationDegree.toFixed(0)}\nFrame: ${frameIndex}\nisMirror: ${isMirror}`
+        wheelGroup.children[3].text = `Wheel #${wheelGroup.name}\nAngle X: ${angleToCameraX.toFixed(0)}\nAngle Y: ${angleToCameraY.toFixed(0)}\nCamera angle: ${cameraRotationZ.toFixed(0)}\nRotation: ${rotationDegree.toFixed(0)}\nFrame: ${frameIndex.toFixed(0)}\nisMirror: ${isMirror}`
     } else {
         wheelGroup.children[3].text = ""
     }
+
+    // Flooring frameIndex because i've finished the calculations
+    frameIndex = Math.floor(frameIndex)
 
     // Update the display properties of the wheel
     setSpriteFrame(wheelGroup.children[0], frameIndex, isMirror, rotationDegree);
 }
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true
+// controls.enableDamping = true
 // controls.autoRotate = true
 controls.autoRotateSpeed *= -1 // Invert rotation
-controls.target = kartGroup.position.clone().add(new THREE.Vector3(0, 0.5, 0)) // Look a little bit more up
+controls.target = kartGroup.position.clone().add(new THREE.Vector3(-0.5750, 0.25, -0.40))
 
 // import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 // const controls = new TrackballControls(camera, renderer.domElement);
