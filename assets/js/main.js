@@ -137,7 +137,7 @@ async function loadKartModelOBJ() {
 
     // Load the materials file
     const materials = await new Promise((resolve, reject) => {
-        mtlLoader.load('/assets/models/crash_obj/crash.mtl', resolve);
+        mtlLoader.load('assets/models/crash_obj/crash.mtl', resolve);
     });
 
     // Preload materials
@@ -148,7 +148,7 @@ async function loadKartModelOBJ() {
 
     // Load the object file
     const object = await new Promise((resolve, reject) => {
-        objLoader.load('/assets/models/crash_obj/crash.obj', resolve);
+        objLoader.load('assets/models/crash_obj/crash.obj', resolve);
     });
 
     // Loop through each material and apply modifications
@@ -187,7 +187,7 @@ function createTire() {
     const debugSquareMaterial = new THREE.MeshBasicMaterial({ color: 0x555555, wireframe: true });
 
     // Tire material
-    const tireSpriteTexture = new THREE.TextureLoader().load('/assets/img/tire-spritesheet.png');
+    const tireSpriteTexture = new THREE.TextureLoader().load('assets/img/tire-spritesheet.png');
     tireSpriteTexture.magFilter = THREE.NearestFilter;
     tireSpriteTexture.minFilter = THREE.NearestFilter;
     tireSpriteTexture.colorSpace = THREE.SRGBColorSpace;
@@ -415,6 +415,8 @@ function writeDebugText() {
         `[N] &mdash; Disable smoke sprite: &mdash; ${isSmokeVisible} « (to be done)`,
         ``,
         `[Space] &mdash; Turbo animation « (to be done)`,
+        ``,
+        `<a href="https://github.com/ClaudioBo/ctr-kart-threejs">Github</a>`,
     ]
 
     const output = lines.join("<br>")
