@@ -415,8 +415,9 @@ function changeTireSpriteBasedOnCamera(tireGroup) {
     // Calculate the relative position vector with the camera's position
     const relativePosition = tireGroupWorldPosition.clone().sub(camera.position);
 
-    // Apply the tire rotation to the relative position vector
-    relativePosition.applyQuaternion(tireGroupWorldRotation.conjugate());
+    // Apply the inverse of tireGroup's rotation to the relative position vector
+    const inverseRotation = tireGroupWorldRotation.clone().conjugate();
+    relativePosition.applyQuaternion(inverseRotation);
 
     // Calculate the angle in degrees to the camera on the X-Z plane
     const angleToCameraX = Math.atan2(relativePosition.z, relativePosition.x) * (180 / Math.PI);
@@ -424,8 +425,15 @@ function changeTireSpriteBasedOnCamera(tireGroup) {
     // Calculate the angle in degrees to the camera on the Y-Z plane
     const angleToCameraY = Math.atan2(relativePosition.y, Math.sqrt(relativePosition.x * relativePosition.x + relativePosition.z * relativePosition.z)) * (180 / Math.PI);
 
-    // Get the camera rotation in degrees
-    const cameraRotationZ = camera.rotation.z * (180 / Math.PI);
+    // Get the relative rotation of the camera
+    const relativeCameraRotation = new THREE.Quaternion();
+    relativeCameraRotation.copy(camera.quaternion).premultiply(tireGroupWorldRotation.clone().conjugate());
+
+    // Convert the relative rotation to Euler angles
+    const relativeCameraEuler = new THREE.Euler().setFromQuaternion(relativeCameraRotation);
+
+    // Convert the relative rotation to degrees
+    const relativeCameraRotationZDegrees = THREE.MathUtils.radToDeg(relativeCameraEuler.z);
 
     // Sum variables
     const tireTotalFrames = tireSpritesheetProperties.totalFrames
@@ -433,7 +441,7 @@ function changeTireSpriteBasedOnCamera(tireGroup) {
     let isMirror = false
 
     // Very promising and simpler sprite rotation method...
-    let rotationDegree = 180 - cameraRotationZ;
+    let rotationDegree = 180 - relativeCameraRotationZDegrees;
 
     // I'll get the closest step value to make the rotations more choppy on purpose
     // Kinda matching the low frames of the spritesheet, or make the rotations less noticeable
@@ -465,7 +473,7 @@ function changeTireSpriteBasedOnCamera(tireGroup) {
 
     // Debugging text -- Laggy asfuck
     if (tireGroup.name == "0" && enableDebugShit) {
-        tireGroup.children[3].text = `Tire #${tireGroup.name}\nAngle X: ${angleToCameraX.toFixed(0)}\nAngle Y: ${angleToCameraY.toFixed(0)}\nCamera angle: ${cameraRotationZ.toFixed(0)}\nRotation: ${rotationDegree.toFixed(0)}\nFrame: ${frameIndex.toFixed(0)}\nisMirror: ${isMirror}`
+        tireGroup.children[3].text = `Tire #${tireGroup.name}\nAngle X: ${angleToCameraX.toFixed(0)}\nAngle Y: ${angleToCameraY.toFixed(0)}\nCamera Rotation Z: ${relativeCameraRotationZDegrees.toFixed(0)}\nRotation: ${rotationDegree.toFixed(0)}\nFrame: ${frameIndex.toFixed(0)}\nisMirror: ${isMirror}`
     } else {
         tireGroup.children[3].text = ""
     }
