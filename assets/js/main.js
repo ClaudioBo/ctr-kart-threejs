@@ -5,6 +5,8 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import Stats from 'three/addons/libs/stats.module.js';
+import { Timer } from 'three/addons/misc/Timer.js';
+import { randInt } from 'three/src/math/MathUtils.js';
 
 // ThreeJS variables
 let renderer;
@@ -12,6 +14,7 @@ let stats;
 let ambientLight;
 
 // General variables
+let clock;
 let scene;
 let camera;
 let controls;
@@ -19,8 +22,13 @@ let kartGroup;
 
 // Preloaded stuff
 let kartModel;
+let smokeSpriteTexture;
+
+// Last Intervals
+let lastSmokeSpawn
 
 // Properties
+let currentSmokes = []
 let enableDebugShit = false
 let choppierRotationMode = 0
 let isSoundEnabled = false // To be done
@@ -29,11 +37,20 @@ let isSmokeDark = false // To be done
 let isSmokeVisible = true // To be done
 
 // Spritesheet properties
-const tireTotalFrames = 17;
-const tireFrameWidth = 32;
-const tireFrameHeight = 32;
-const tireTextureWidth = 544;
-const tireTextureHeight = 32;
+const tireSpritesheetProperties = {
+    totalFrames: 17,
+    frameWidth: 32,
+    frameHeight: 32,
+    textureWidth: 544,
+    textureHeight: 32,
+}
+const smokeSpritesheetProperties = {
+    totalFrames: 5,
+    frameWidth: 32,
+    frameHeight: 32,
+    textureWidth: 160,
+    textureHeight: 32,
+}
 
 // Initialize everything
 async function initialize() {
@@ -59,18 +76,30 @@ async function initialize() {
 
     // Setup camera
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.x = 0
-    camera.position.y = 1
+    camera.position.x = 1
+    camera.position.y = 3
     camera.position.z = -3
     camera.updateProjectionMatrix()
+
+    // camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000);
+    // camera.position.x = 0
+    // camera.position.y = 0
+    // camera.position.z = -3
+    // camera.zoom = 250
+    // camera.updateProjectionMatrix()
 
     // Setup camera controls
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true
-    controls.autoRotate = true
+    // controls.autoRotate = true
 
-    // Load model
+    // Create clock
+    clock = new THREE.Clock();
+    clock.start()
+
+    // Load model and smoke
     kartModel = await loadKartModelOBJ();
+    smokeSpriteTexture = loadSmokeSpriteTexture()
 
     // Create kart group
     kartGroup = new THREE.Group()
@@ -94,7 +123,7 @@ async function initialize() {
     registerListeners();
 
     // Start loop
-    animate();
+    render();
 }
 
 // Register all listeners
@@ -105,8 +134,9 @@ function registerListeners() {
 
 // Function to handle key presses
 function onKeyDown(event) {
+    if (event.key == "s") return
     if (event.key == "d") toggleDebugShit()
-    if (event.key == "x") controls.autoRotate = !controls.autoRotate; writeDebugText()
+
     if (event.key == "z") {
         camera.position.x = 0
         camera.position.y = 1
@@ -115,19 +145,27 @@ function onKeyDown(event) {
         controls.target = kartGroup.position.clone().add(new THREE.Vector3(0, 0.65, 0))
         controls.update();
     }
+    if (event.key == "x") controls.autoRotate = !controls.autoRotate; writeDebugText()
+
     if (event.key == "c") {
         choppierRotationMode += 1
         if (choppierRotationMode > 2)
             choppierRotationMode = 0
         writeDebugText()
     }
+
+    if (event.key == "v") return
+    if (event.key == "b") isSmokeDark = !isSmokeDark
+    if (event.key == "n") isSmokeVisible = !isSmokeVisible
+
+    if (event.key == " ") return
 }
 
 // Resize window function
 function onWindowResize() {
+    renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 // Load kart model and materials
@@ -171,13 +209,56 @@ async function loadKartModelOBJ() {
     return object;
 }
 
+// Load smoke sprite
+function loadSmokeSpriteTexture() {
+    const smokeSpriteTexture = new THREE.TextureLoader().load('assets/img/smoke-spritesheet.png');
+    // const smokeSpriteTexture = new THREE.TextureLoader().load('assets/img/smoke-spritesheet-numbered.png');
+    smokeSpriteTexture.magFilter = THREE.NearestFilter;
+    smokeSpriteTexture.minFilter = THREE.NearestFilter;
+    smokeSpriteTexture.colorSpace = THREE.SRGBColorSpace;
+    return smokeSpriteTexture
+}
+
+function createSmoke() {
+    const smokeSpriteMaterial = new THREE.SpriteMaterial({ map: smokeSpriteTexture.clone() });
+    smokeSpriteMaterial.blending = isSmokeDark ? THREE.SubtractiveBlending : THREE.AdditiveBlending
+
+    const smokeSprite = new THREE.Sprite(smokeSpriteMaterial);
+    smokeSprite.scale.set(0.25, 0.25, 1);
+
+    setSpriteFrame(smokeSprite, smokeSpritesheetProperties, 0, false, 0)
+
+    return smokeSprite
+}
+
 // Create Kart group
 function createKart() {
     const mainKartGroup = kartModel.clone()
     const mainKartAxesHelper = new THREE.AxesHelper(1)
     mainKartAxesHelper.visible = false
+
+    // Kart Exhausts markers
+    const leftExhaustMarker = new THREE.Object3D();
+    const rightExhaustMarker = new THREE.Object3D();
+    leftExhaustMarker.position.set(0.2835, 0.715, -0.783)
+    rightExhaustMarker.position.set(-0.2835, 0.715, -0.783)
+
+    const VERTICAL_EXHAUST_OFFSET = 3.25
+    const HORIZONTAL_EXHAUST_OFFSET = 0
+    // const VERTICAL_EXHAUST_OFFSET = 3.5
+    // const HORIZONTAL_EXHAUST_OFFSET = 0.3
+
+    leftExhaustMarker.rotation.x = VERTICAL_EXHAUST_OFFSET
+    rightExhaustMarker.rotation.x = VERTICAL_EXHAUST_OFFSET
+
+    leftExhaustMarker.rotation.y = HORIZONTAL_EXHAUST_OFFSET
+    rightExhaustMarker.rotation.y = -HORIZONTAL_EXHAUST_OFFSET
+
     mainKartGroup.add(mainKartAxesHelper)
+    mainKartGroup.add(leftExhaustMarker)
+    mainKartGroup.add(rightExhaustMarker)
     kartGroup.add(mainKartGroup);
+
 }
 
 // Create Tire group to clone later
@@ -222,7 +303,7 @@ function createTire() {
     tireGroup.add(textSprite)
 
     // Set default frame
-    setSpriteFrame(tireSprite, 0, false, 0)
+    setSpriteFrame(tireSprite, tireSpritesheetProperties, 0, false, 0)
 
     return tireGroup
 }
@@ -237,15 +318,22 @@ function createKartTires() {
 }
 
 // Function to set sprite frame, mirroring and rotation
-function setSpriteFrame(sprite, frameIndex, mirror = false, rotationDegree = 0) {
-    const x = (frameIndex % tireTotalFrames) * tireFrameWidth;
-    const y = Math.floor(frameIndex / tireTotalFrames) * tireFrameHeight;
+function setSpriteFrame(sprite, spritesheetProperties, frameIndex, mirror = false, rotationDegree = 0) {
+
+    const totalFrames = spritesheetProperties.totalFrames
+    const frameWidth = spritesheetProperties.frameWidth
+    const frameHeight = spritesheetProperties.frameHeight
+    const textureWidth = spritesheetProperties.textureWidth
+    const textureHeight = spritesheetProperties.textureHeight
+
+    const x = (frameIndex % totalFrames) * frameWidth;
+    const y = Math.floor(frameIndex / totalFrames) * frameHeight;
 
     // Calculate texture offsets and repeats
-    const offsetX = x / tireTextureWidth;
-    const offsetY = 1 - (y + tireFrameHeight) / tireTextureHeight;
-    const repeatX = tireFrameWidth / tireTextureWidth;
-    const repeatY = tireFrameHeight / tireTextureHeight;
+    const offsetX = x / textureWidth;
+    const offsetY = 1 - (y + frameHeight) / textureHeight;
+    const repeatX = frameWidth / textureWidth;
+    const repeatY = frameHeight / textureHeight;
 
     // Set texture coordinates
     sprite.material.map.offset.set(offsetX, offsetY);
@@ -304,6 +392,16 @@ function updateKartTireFrames() {
     }
 }
 
+// Helper function to reverse a number from a range
+function reverseNumber(startValue, currentValue, maxValue) {
+    return startValue + (maxValue - startValue + 1) - (currentValue - startValue + 1);
+}
+
+// Helper function to normalize a value to maxValue
+function normalizeToMax(currentValue, maxValue) {
+    return currentValue / maxValue;
+}
+
 // Helper function to make a value close to a step value
 function closestStepValue(value, step) {
     return Math.round(value / step) * step
@@ -330,6 +428,7 @@ function changeTireSpriteBasedOnCamera(tireGroup) {
     const cameraRotationZ = camera.rotation.z * (180 / Math.PI);
 
     // Sum variables
+    const tireTotalFrames = tireSpritesheetProperties.totalFrames
     let frameIndex = 0
     let isMirror = false
 
@@ -372,7 +471,7 @@ function changeTireSpriteBasedOnCamera(tireGroup) {
     }
 
     // Update the display properties of the tire
-    setSpriteFrame(tireGroup.children[0], frameIndex, isMirror, rotationDegree);
+    setSpriteFrame(tireGroup.children[0], tireSpritesheetProperties, frameIndex, isMirror, rotationDegree);
 }
 
 // Function to toggle rendering on debug shit
@@ -408,11 +507,11 @@ function writeDebugText() {
         `[Z] &mdash; Reset camera position`,
         `[X] &mdash; Toggle camera autorotation: &mdash; ${controls.autoRotate}`,
         ``,
-        `[C] &mdash; Toggle choppy sprite rotation mode: &mdash; ${choppyModeText}`,
+        `[C] &mdash; Toggle choppy tire sprite rotation mode: &mdash; ${choppyModeText}`,
         ``,
         `[V] &mdash; Toggle acceleration (sprite flicker and sound): &mdash; ${isAccelerating} « (to be done)`,
-        `[B] &mdash; Toggle smoke darkness: &mdash; ${isSmokeDark} « (to be done)`,
-        `[N] &mdash; Disable smoke sprite: &mdash; ${isSmokeVisible} « (to be done)`,
+        `[B] &mdash; Toggle smoke darkness: &mdash; ${isSmokeDark}`,
+        `[N] &mdash; Disable smoke sprite: &mdash; ${isSmokeVisible}`,
         ``,
         `[Space] &mdash; Turbo animation « (to be done)`,
         ``,
@@ -424,7 +523,9 @@ function writeDebugText() {
 }
 
 // Loop function
-function animate() {
+function render() {
+    update()
+
     updateKartChildPositions()
     updateKartTireFrames()
 
@@ -432,7 +533,118 @@ function animate() {
     stats.update();
 
     renderer.render(scene, camera);
-    requestAnimationFrame(animate);
+    requestAnimationFrame(render);
+}
+
+function update() {
+    const deltaTime = clock.getDelta();
+    const elapsedClock = clock.getElapsedTime();
+    doSmokeLogic(elapsedClock)
+    // doRotationDebugLogic(deltaTime)
+}
+
+function doSmokeLogic(elapsedClock) {
+    checkSmokeSpawning(elapsedClock)
+
+    const SMOKE_LIFETIME = 0.22
+    const SMOKE_MOVESPEED = 0.02
+    const forwardVector = new THREE.Vector3(0, 0, 1)
+    currentSmokes.forEach(smoke => {
+        // Timer
+        smoke.timer.update()
+
+        const timeElapsed = smoke.timer.getElapsed()
+
+        // Lifetime
+        if (timeElapsed > SMOKE_LIFETIME) {
+            currentSmokes.splice(currentSmokes.indexOf(smoke), 1)
+            scene.remove(smoke)
+            return
+        }
+
+        // Move
+        const directionVector = forwardVector.clone()
+        directionVector.applyQuaternion(smoke.quaternion)
+        directionVector.multiplyScalar(SMOKE_MOVESPEED)
+        smoke.position.add(directionVector)
+
+        // Rotation
+        const CURRENT_SMOKE_ROTATION_DEGREE = smoke.material.rotation / (Math.PI / 180);
+        const SMOKE_ROTATION_RATIO = (smoke.rotateCounterClockwise) ? smoke.rotateSpeed * -1 : smoke.rotateSpeed
+        const rotationDegree = SMOKE_ROTATION_RATIO + CURRENT_SMOKE_ROTATION_DEGREE
+
+        // Opacity
+        const SMOKE_LIFESPAN_RATIO = (timeElapsed / SMOKE_LIFETIME)
+        smoke.material.opacity = reverseNumber(0, SMOKE_LIFESPAN_RATIO, 1)
+
+        // Scale
+        const SMOKE_SCALE = normalizeToMax(SMOKE_LIFESPAN_RATIO, 0.75) + 0.25
+        smoke.scale.set(SMOKE_SCALE, SMOKE_SCALE, 1);
+
+        // Frame Index
+        const frameIndex = Math.floor(SMOKE_LIFESPAN_RATIO * smokeSpritesheetProperties.totalFrames)
+
+        // Set frame and rotation
+        setSpriteFrame(smoke, smokeSpritesheetProperties, frameIndex, false, rotationDegree)
+
+    })
+}
+
+function checkSmokeSpawning(elapsedClock) {
+    const SPAWN_SMOKE_INTERVAL = 0.04
+    if (!isSmokeVisible) return
+    if (elapsedClock - lastSmokeSpawn < SPAWN_SMOKE_INTERVAL) return
+    lastSmokeSpawn = elapsedClock
+
+    // Get marker positions and rotations relative to world
+    const leftExhaustMarker = kartGroup.children[0].children[2]
+    const rightExhaustMarker = kartGroup.children[0].children[3]
+
+    const leftExhaustPosition = leftExhaustMarker.getWorldPosition(new THREE.Vector3())
+    const rightExhaustPosition = rightExhaustMarker.getWorldPosition(new THREE.Vector3())
+
+    // Get kart's rotation relative to world
+    const leftExhaustRotation = leftExhaustMarker.getWorldQuaternion(new THREE.Quaternion());
+    const rightExhaustRotation = rightExhaustMarker.getWorldQuaternion(new THREE.Quaternion());
+
+    // Clone the smokes
+    const smokeLeft = createSmoke()
+    const smokeRight = createSmoke()
+
+    // Set position
+    smokeLeft.position.copy(leftExhaustPosition)
+    smokeRight.position.copy(rightExhaustPosition)
+
+    // Set rotation
+    smokeLeft.setRotationFromQuaternion(leftExhaustRotation);
+    smokeRight.setRotationFromQuaternion(rightExhaustRotation);
+
+    // Offset the position a little bit up because smoke spritesheet 1st frame is offset
+    const UPWARDS_OFFSET = new THREE.Vector3(0, 0.1, 0)
+    smokeLeft.position.add(UPWARDS_OFFSET)
+    smokeRight.position.add(UPWARDS_OFFSET)
+
+    // Set some properties for logic
+    smokeLeft.timer = new Timer();
+    smokeRight.timer = new Timer();
+    smokeLeft.rotateCounterClockwise = Math.random() < 0.5
+    smokeRight.rotateCounterClockwise = Math.random() < 0.5
+    smokeLeft.rotateSpeed = randInt(1, 4)
+    smokeRight.rotateSpeed = randInt(1, 4)
+
+    // Added to array to apply logic to it
+    currentSmokes.push(smokeLeft)
+    currentSmokes.push(smokeRight)
+
+    // Add smokes to scene
+    scene.add(smokeLeft)
+    scene.add(smokeRight)
+}
+
+function doRotationDebugLogic(deltaTime) {
+    const rotationSpeed = 0.5 * deltaTime
+    kartGroup.rotation.x += rotationSpeed
+    kartGroup.rotation.y += rotationSpeed
 }
 
 // Start loop

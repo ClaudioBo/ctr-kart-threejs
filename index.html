@@ -8,10 +8,24 @@
                 margin: 0;
                 overflow: hidden;
             }
+            #debugText {
+                position: absolute;
+                bottom: 10px;
+                left: 10px;
+                color: white;
+                font-family: monospace;
+                font-size: 0.75rem;
+                pointer-events: none;
+            }
+            a {
+                font-weight: bolder;
+                font-size: 1rem;
+                pointer-events: auto;
+            }
         </style>
     </head>
     <body>
-        <div id="debugText" style="position: absolute; bottom: 10px; left: 10px; color: white; font-family: monospace;"></div>
+        <div id="debugText"></div>
         <script type="module" src="assets/js/main.js"></script>
     </body>
 </html>
