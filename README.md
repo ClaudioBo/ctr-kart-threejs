@@ -38,8 +38,8 @@ https://www.claudiobo.com/ctr-kart-threejs
 -   [x] Change sprite depending on tire object rotation
 -   [x] Import Crash Kart model
 -   [x] Change sprite depending on camera's view based on vertical axis
--   [ ] Find a way to render the kart model correctly without maxing out the ambient light intensity
--   [ ] Implement Smoke with togglable darkness and toggable visibility
+-   [ ] Find a way to render the kart model correctly without maxing heavily out the ambient light intensity &mdash; `Change MeshPhongMaterial to MeshStandardMaterial or MeshBasicMaterial`
+-   [x] Implement Smoke with togglable darkness and toggable visibility
 -   [ ] Implement Turbo animation
 -   [ ] Implement Tire's color palette modification to simulate forward motion
 -   [ ] Implement Kart sounds
