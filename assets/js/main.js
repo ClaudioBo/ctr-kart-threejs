@@ -76,9 +76,9 @@ async function initialize() {
 
     // Setup camera
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.x = 1
-    camera.position.y = 3
-    camera.position.z = -3
+    camera.position.x = 0
+    camera.position.y = 1
+    camera.position.z = -4
     camera.updateProjectionMatrix()
 
     // camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000);
@@ -91,7 +91,7 @@ async function initialize() {
     // Setup camera controls
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true
-    // controls.autoRotate = true
+    controls.autoRotate = true
 
     // Create clock
     clock = new THREE.Clock();
