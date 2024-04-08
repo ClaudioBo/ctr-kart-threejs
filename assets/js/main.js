@@ -298,7 +298,7 @@ async function loadTurboModelFrameOBJ(name) {
                         material.map.magFilter = THREE.NearestFilter;
                         material.map.minFilter = THREE.NearestFilter;
                         material.blending = THREE.AdditiveBlending;
-                        material.transparent = true
+                        material.transparent = true // TODO: Fix turbo dissapeareance because of the smoke particles
                         material.side = THREE.DoubleSide
                     }
                 });
@@ -379,8 +379,8 @@ function createKart() {
     const leftExhaustModel = turboTemplate.clone()
     const rightExhaustModel = turboTemplate.clone()
 
-    leftExhaustModel.visible = false
-    rightExhaustModel.visible = false
+    leftExhaustModel.visible = true
+    rightExhaustModel.visible = true
 
     leftExhaustModel.position.copy(leftExhaustMarker.position)
     rightExhaustModel.position.copy(rightExhaustMarker.position)
