@@ -1,0 +1,44 @@
+// CurrentSpeed:
+// Based on https://youtu.be/vKtUlnLI30Q
+// When driving normally and drifting it seems that it caps at 65.67
+// Depending on the fire level it can max to 100
+let currentSpeed = 0
+
+// CurrentSlideCharge:
+// Based on my Bizhawk script
+// When drifting, the initial value is 960 and starts to decrease
+// This is decreased by 32 each frame (30fps / 1000 = 0.03)
+
+// Value log to be able to perform mini-turbos:
+// - less than 448
+// - 416
+// - 416
+
+// At 480 the smoke now spawns black
+
+// SlideCharge = 416 gave 96 reserves
+// SlideCharge = 384 gave 224 reserves
+// SlideCharge = 352 gave 352 reserves
+// SlideCharge = 320 gave 480 reserves
+// SlideCharge = 288 gave 608 reserves
+// SlideCharge = 227 gave 980 reserves
+// SlideCharge = 162 gave 1240 reserves
+// SlideCharge = 136 gave 1342 reserves
+// SlideCharge = 67 gave 1675 reserves
+// SlideCharge = 65 gave 1638 reserves
+// SlideCharge = 33 gave 1756 reserves
+
+// Result: Seems that you can turbo at 432 (or <= 45%)
+let currentSlideCharge = 0
+
+// CurrentReserves:
+// Based on my Bizhawk script
+// The only think I know ATM is that:
+// This is decreased by 32 each frame (30fps / 1000 = 0.03)
+
+// Value log:
+
+// Results
+// Charge at 0 would give approximately 1864 reserves
+// Charge at 410 would give approximately 0 reserves
+let currentReserves = 0

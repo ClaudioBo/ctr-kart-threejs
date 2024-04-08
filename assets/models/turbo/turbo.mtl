@@ -1,0 +1,37 @@
+newmtl 976_80_29_257_32_16
+d 0.9
+map_Kd textures\976_80_29_257_32_16.png
+
+newmtl 956_27_11_256_16_21
+map_Kd textures\956_27_11_256_16_21.png
+
+newmtl 956_21_11_256_16_27
+map_Kd textures\956_21_11_256_16_27.png
+
+newmtl 956_18_11_256_16_28
+map_Kd textures\956_18_11_256_16_28.png
+
+newmtl 956_15_11_256_16_28
+map_Kd textures\956_15_11_256_16_28.png
+
+newmtl 956_12_11_256_16_28
+map_Kd textures\956_12_11_256_16_28.png
+
+newmtl 956_9_11_256_16_28
+map_Kd textures\956_9_11_256_16_28.png
+
+newmtl 956_6_11_256_16_28
+map_Kd textures\956_6_11_256_16_28.png
+
+newmtl 956_3_11_256_16_28
+map_Kd textures\956_3_11_256_16_28.png
+
+newmtl 956_0_11_256_16_28
+map_Kd textures\956_0_11_256_16_28.png
+
+newmtl 956_6_11_256_16_25
+map_Kd textures\956_6_11_256_16_25.png
+
+newmtl no_texture
+map_Kd textures\default.png
+
