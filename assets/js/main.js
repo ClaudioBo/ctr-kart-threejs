@@ -1,5 +1,6 @@
 // Import Three.js
 import * as THREE from 'three';
+import GUI from 'lil-gui';
 import Stats from 'three/addons/libs/stats.module.js';
 import SpriteText from 'three-spritetext';
 import { Timer } from 'three/addons/misc/Timer.js';
@@ -12,6 +13,7 @@ import { MathUtils, randFloat, randInt } from 'three/src/math/MathUtils.js';
 let renderer;
 let stats;
 let ambientLight;
+let gui;
 
 // General variables
 let clock;
@@ -21,22 +23,25 @@ let controls;
 let kartGroup;
 
 // Constants
-const VERTICAL_ROTATION_EXHAUST_OFFSET = 3.715 // 3.5
-const HORIZONTAL_ROTATION_EXHAUST_OFFSET = 0 // 0.3
+const VERTICAL_ROTATION_EXHAUST_OFFSET = 3.715 // 3.5, 3.715 or Math.PI
 
-const TIRE_SCALE = 0.45; // by eye: 0.45, original short value 0xCCC (3276), converted to Float and multiplied by 0.1 = 0.45___
+const TIRE_SCALE = 0.45; // by eye: 0.45, original short value 0xCCC (3276), converted to Float and multiplied by 0.1 = 0.45xxxx
 const TIRE_POSITION_OFFSET_Y = 0.25;
 const TIRE_POSITION_OFFSET_BACK_X = 0.575;
 const TIRE_POSITION_OFFSET_FRONT_X = 0.575;
 const TIRE_POSITION_OFFSET_BACK_Z = 0.4;
 const TIRE_POSITION_OFFSET_FRONT_Z = 0.8;
 
-const SMOKE_SPAWN_INTERVAL = 0.0333333333333333 // Spawns each frame (1 / 30fps = 0.0333333333333333)
-const SMOKE_LIFETIME = 0.1666666666666667 // Lifetime is 5 frames (5 / 30fps = 0.1666666666666667)
-const SMOKE_SCALE_MIN = 0.5
-const SMOKE_SCALE_MAX = 0.75
-const SMOKE_MOVESPEED = 0.015
-const SMOKE_SPREAD = 0.05
+const SMOKE_PROPERTIES = {
+    SMOKE_SPAWN_INTERVAL: 0.03, // Spawns each frame (1 / 30fps = 0.0333333333333333)
+    SMOKE_LIFETIME: 0.16, // Lifetime is 5 frames (5 / 30fps = 0.1666666666666667)
+    SMOKE_SCALE_MIN: 0.5,
+    SMOKE_SCALE_MAX: 0.8,
+    SMOKE_MOVESPEED: 0.01,
+    SMOKE_SPREAD: 0.5,
+    SMOKE_OPACITY: 0.5,
+    reset: () => gui.reset()
+}
 
 // Inspired on https://github.com/CTR-tools/CTR-ModSDK/blob/8d3c0c6eb262852a150fd50e2b5ad4335f363b15/mods/Modules/ReservesMeter/src/Turbo_Increment.c#L143
 const TURBO_DISAPPEAR_AFTER_QUICKDEATH = 0.1 // Suggested on L#301
@@ -97,7 +102,8 @@ async function initialize() {
 
     // Setup scene
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1e1e1e)
+    scene.background = new THREE.Color(0xb2b2b2)
+    // scene.background = new THREE.Color(0x1e1e1e)
 
     // Add an ambient light to the scene for overall illumination
     // This light intensity matches the model hex colors
@@ -108,8 +114,8 @@ async function initialize() {
     // Setup camera
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.x = 0
-    camera.position.y = 1
-    camera.position.z = -4
+    camera.position.y = 1.82 // 82
+    camera.position.z = -8.5 // -170
     camera.updateProjectionMatrix()
 
     // camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000);
@@ -149,6 +155,10 @@ async function initialize() {
     // Add the Kart to the scene
     scene.add(kartGroup);
 
+    // Setup GUI
+    gui = new GUI()
+    setupGUI();
+
     // Write HTML text
     writeDebugText()
 
@@ -163,6 +173,17 @@ async function initialize() {
 function registerListeners() {
     window.addEventListener('resize', onWindowResize, false);
     document.addEventListener('keydown', onKeyDown, false);
+}
+
+function setupGUI() {
+    gui.add(SMOKE_PROPERTIES, "SMOKE_SPAWN_INTERVAL").step(0.0001)
+    gui.add(SMOKE_PROPERTIES, "SMOKE_LIFETIME").step(0.0001)
+    gui.add(SMOKE_PROPERTIES, "SMOKE_SCALE_MIN").step(0.001)
+    gui.add(SMOKE_PROPERTIES, "SMOKE_SCALE_MAX").step(0.001)
+    gui.add(SMOKE_PROPERTIES, "SMOKE_MOVESPEED").step(0.00001)
+    gui.add(SMOKE_PROPERTIES, "SMOKE_SPREAD").step(0.001)
+    gui.add(SMOKE_PROPERTIES, "SMOKE_OPACITY").step(0.001)
+    gui.add(SMOKE_PROPERTIES, "reset")
 }
 
 // Function to handle key presses
@@ -291,16 +312,15 @@ async function loadTurboModelFrameOBJ(name) {
         if (child instanceof THREE.Mesh) {
             if (Array.isArray(child.material)) {
                 child.material.forEach(material => {
-                    // Disable texture filtering
-                    material.vertexColors = true
-                    material.depthWrite = false
                     if (!!material.map) {
                         material.map.magFilter = THREE.NearestFilter;
                         material.map.minFilter = THREE.NearestFilter;
-                        material.blending = THREE.AdditiveBlending;
-                        material.transparent = true // TODO: Fix turbo dissapeareance because of the smoke particles
-                        material.side = THREE.DoubleSide
                     }
+                    material.blending = THREE.AdditiveBlending;
+                    material.side = THREE.DoubleSide
+                    material.transparent = true
+                    material.depthWrite = false
+                    material.vertexColors = true
                 });
             }
         }
@@ -326,19 +346,6 @@ function createTurboTemplate() {
     return turboGroup
 }
 
-function nextTurboFrame(turboGroup) {
-    const lastFrame = turboGroup.userData.currentFrame
-    const lastFrameModel = turboGroup.children[lastFrame];
-    turboGroup.userData.currentFrame += 1
-    if (turboGroup.userData.currentFrame > turboGroup.children.length - 1) {
-        turboGroup.userData.currentFrame = 0
-        lastFrameModel.visible = false
-    }
-    const currentFrameModel = turboGroup.children[turboGroup.userData.currentFrame];
-    lastFrameModel.visible = false
-    currentFrameModel.visible = true
-}
-
 // Load smoke sprite
 function loadSmokeSpriteTexture() {
     const smokeSpriteTexture = new THREE.TextureLoader().load('assets/img/smoke-spritesheet.png');
@@ -351,11 +358,26 @@ function loadSmokeSpriteTexture() {
 function createSmoke() {
     const smokeSpriteMaterial = new THREE.SpriteMaterial({ map: smokeSpriteTexture.clone() });
     smokeSpriteMaterial.blending = isSmokeDark ? THREE.SubtractiveBlending : THREE.AdditiveBlending
+    smokeSpriteMaterial.depthWrite = false
+    smokeSpriteMaterial.opacity = SMOKE_PROPERTIES.SMOKE_OPACITY
 
     const smokeSprite = new THREE.Sprite(smokeSpriteMaterial);
     setSpriteFrame(smokeSprite, smokeSpritesheetProperties, 0, false, 0)
 
     return smokeSprite
+}
+
+function nextTurboFrame(turboGroup) {
+    const lastFrame = turboGroup.userData.currentFrame
+    const lastFrameModel = turboGroup.children[lastFrame];
+    turboGroup.userData.currentFrame += 1
+    if (turboGroup.userData.currentFrame > turboGroup.children.length - 1) {
+        turboGroup.userData.currentFrame = 0
+        lastFrameModel.visible = false
+    }
+    const currentFrameModel = turboGroup.children[turboGroup.userData.currentFrame];
+    lastFrameModel.visible = false
+    currentFrameModel.visible = true
 }
 
 // Create Kart group
@@ -373,14 +395,11 @@ function createKart() {
     leftExhaustMarker.rotation.x = VERTICAL_ROTATION_EXHAUST_OFFSET
     rightExhaustMarker.rotation.x = VERTICAL_ROTATION_EXHAUST_OFFSET
 
-    leftExhaustMarker.rotation.y = HORIZONTAL_ROTATION_EXHAUST_OFFSET
-    rightExhaustMarker.rotation.y = -HORIZONTAL_ROTATION_EXHAUST_OFFSET
-
     const leftExhaustModel = turboTemplate.clone()
     const rightExhaustModel = turboTemplate.clone()
 
-    leftExhaustModel.visible = true
-    rightExhaustModel.visible = true
+    leftExhaustModel.visible = false
+    rightExhaustModel.visible = false
 
     leftExhaustModel.position.copy(leftExhaustMarker.position)
     rightExhaustModel.position.copy(rightExhaustMarker.position)
@@ -401,25 +420,39 @@ function createKart() {
     mainKartGroup.add(rightExhaustMarker)
     mainKartGroup.add(leftExhaustModel)
     mainKartGroup.add(rightExhaustModel)
+
+    // //debug arrows
+    // const arrow1 = new THREE.ArrowHelper()
+    // arrow1.position.copy(leftExhaustMarker.position)
+    // arrow1.rotation.x = VERTICAL_ROTATION_EXHAUST_OFFSET
+    // mainKartGroup.add(arrow1)
+
+    // const arrow2 = new THREE.ArrowHelper()
+    // arrow2.position.copy(rightExhaustMarker.position)
+    // arrow2.rotation.x = VERTICAL_ROTATION_EXHAUST_OFFSET
+    // mainKartGroup.add(arrow2)
+
     kartGroup.add(mainKartGroup);
 
 }
 
 // Create Tire group to clone later
 function createTire() {
+    // Tire group
+    const tireGroup = new THREE.Group()
+
     // Debug square material
     const debugSquareGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
     const debugSquareMaterial = new THREE.MeshBasicMaterial({ color: 0x555555, wireframe: true });
 
-    // Tire material
+    // Tire texture
     const tireSpriteTexture = new THREE.TextureLoader().load('assets/img/tire-spritesheet.png');
     tireSpriteTexture.magFilter = THREE.NearestFilter;
     tireSpriteTexture.minFilter = THREE.NearestFilter;
     tireSpriteTexture.colorSpace = THREE.SRGBColorSpace;
-    const tireSpriteMaterial = new THREE.SpriteMaterial({ map: tireSpriteTexture });
 
-    // Tire group
-    const tireGroup = new THREE.Group()
+    // Tire material
+    const tireSpriteMaterial = new THREE.SpriteMaterial({ map: tireSpriteTexture });
 
     // Tire sprite
     const tireSprite = new THREE.Sprite(tireSpriteMaterial);
@@ -681,10 +714,10 @@ function doSmokeLogic() {
         const timeElapsed = smoke.timer.getElapsed()
 
         // Forward vector with small random spread
-        const forwardVector = new THREE.Vector3(randFloat(-SMOKE_SPREAD, SMOKE_SPREAD), randFloat(-SMOKE_SPREAD, SMOKE_SPREAD), 1)
+        const forwardVector = new THREE.Vector3(randFloat(-SMOKE_PROPERTIES.SMOKE_SPREAD, SMOKE_PROPERTIES.SMOKE_SPREAD), 0, 1)
 
         // Lifetime
-        if (timeElapsed > SMOKE_LIFETIME) {
+        if (timeElapsed > SMOKE_PROPERTIES.SMOKE_LIFETIME) {
             currentSmokes.splice(currentSmokes.indexOf(smoke), 1)
             scene.remove(smoke)
             return
@@ -693,23 +726,22 @@ function doSmokeLogic() {
         // Move forward
         const directionVector = forwardVector.clone()
         directionVector.applyQuaternion(smoke.quaternion)
-        directionVector.multiplyScalar(SMOKE_MOVESPEED)
+        directionVector.multiplyScalar(SMOKE_PROPERTIES.SMOKE_MOVESPEED)
         smoke.position.add(directionVector)
 
         // Rotation
         const CURRENT_SMOKE_ROTATION_DEGREE = smoke.material.rotation / (Math.PI / 180);
         const SMOKE_ROTATION_RATIO = -smoke.rotateSpeed
-        let rotationDegree = 0
-        rotationDegree = SMOKE_ROTATION_RATIO + CURRENT_SMOKE_ROTATION_DEGREE
+        const rotationDegree = SMOKE_ROTATION_RATIO + CURRENT_SMOKE_ROTATION_DEGREE
 
         // Lifetime ratio
-        const SMOKE_LIFETIME_RATIO = (timeElapsed / SMOKE_LIFETIME)
+        const SMOKE_LIFETIME_RATIO = (timeElapsed / SMOKE_PROPERTIES.SMOKE_LIFETIME)
 
         // // Opacity
-        // smoke.material.opacity = reverseNumber(0, SMOKE_LIFESPAN_RATIO, 1)
+        // smoke.material.opacity = reverseNumber(0, SMOKE_TEST.SMOKE_LIFETIME_RATIO, 1)
 
         // Scale
-        const SMOKE_SCALE_CURRENT = MathUtils.lerp(SMOKE_SCALE_MIN, SMOKE_SCALE_MAX, SMOKE_LIFETIME_RATIO)
+        const SMOKE_SCALE_CURRENT = MathUtils.lerp(SMOKE_PROPERTIES.SMOKE_SCALE_MIN, SMOKE_PROPERTIES.SMOKE_SCALE_MAX, SMOKE_LIFETIME_RATIO)
         smoke.scale.set(SMOKE_SCALE_CURRENT, SMOKE_SCALE_CURRENT, 1);
 
         // Set frame and rotation
@@ -740,7 +772,7 @@ function doTurboAnimation() {
 
 function trySmokeSpawning(elapsedClock) {
     if (!isSmokeVisible) return
-    if (elapsedClock - lastSmokeSpawn < SMOKE_SPAWN_INTERVAL) return
+    if (elapsedClock - lastSmokeSpawn < SMOKE_PROPERTIES.SMOKE_SPAWN_INTERVAL) return
 
     // Get marker positions and rotations relative to world
     const leftExhaustMarker = kartGroup.children[0].children[2]
@@ -767,9 +799,9 @@ function trySmokeSpawning(elapsedClock) {
 
     // Offset the position a little bit up because smoke 1st frame is offset
     // and then a little bit far away from the exhaust bc its like that in the real game
-    const UPWARDS_OFFSET = new THREE.Vector3(0, 0.1, -0.1)
-    smokeLeft.position.add(UPWARDS_OFFSET)
-    smokeRight.position.add(UPWARDS_OFFSET)
+    const OFFSET_VECTOR = new THREE.Vector3(0, 0.1, -0.05)
+    smokeLeft.position.add(OFFSET_VECTOR)
+    smokeRight.position.add(OFFSET_VECTOR)
 
     // Set some properties for logic
     smokeLeft.timer = new Timer();
