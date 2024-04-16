@@ -19,55 +19,89 @@ let gui;
 let clock;
 let scene;
 let camera;
+let audioListener;
 let controls;
 let kartGroup;
 
 // Constants
-const VERTICAL_ROTATION_EXHAUST_OFFSET = 3.715 // 3.5, 3.715 or Math.PI
+const VERTICAL_ROTATION_EXHAUST_OFFSET = 3.5 // 3.5, 3.715 or Math.PI
 
-const TIRE_SCALE = 0.45; // by eye: 0.45, original short value 0xCCC (3276), converted to Float and multiplied by 0.1 = 0.45xxxx
-const TIRE_POSITION_OFFSET_Y = 0.25;
-const TIRE_POSITION_OFFSET_BACK_X = 0.575;
-const TIRE_POSITION_OFFSET_FRONT_X = 0.575;
-const TIRE_POSITION_OFFSET_BACK_Z = 0.4;
-const TIRE_POSITION_OFFSET_FRONT_Z = 0.8;
+const TIRE_CONSTANTS = {
+    TIRE_SCALE: 0.45, // by eye: 0.45, original short value 0xCCC (3276), converted to Float and multiplied by 0.1 = 0.45xxxx
+    TIRE_POSITION_OFFSET_Y: 0.25,
+    TIRE_POSITION_OFFSET_BACK_X: 0.575,
+    TIRE_POSITION_OFFSET_FRONT_X: 0.575,
+    TIRE_POSITION_OFFSET_BACK_Z: 0.4,
+    TIRE_POSITION_OFFSET_FRONT_Z: 0.8,
+    TIRE_FRAME_CHANGE_RATE: 3,
+    TIRE_FRAME1_COLOR: new THREE.Color(0xffffff),
+    TIRE_FRAME2_COLOR: new THREE.Color(0xbfbfbf),
+}
 
-const SMOKE_PROPERTIES = {
+const SMOKE_CONSTANTS = {
     SMOKE_SPAWN_INTERVAL: 0.03, // Spawns each frame (1 / 30fps = 0.0333333333333333)
     SMOKE_LIFETIME: 0.16, // Lifetime is 5 frames (5 / 30fps = 0.1666666666666667)
     SMOKE_SCALE_MIN: 0.5,
-    SMOKE_SCALE_MAX: 0.8,
-    SMOKE_MOVESPEED: 0.01,
+    SMOKE_SCALE_MAX: 1.0,
+    SMOKE_MOVESPEED: 0.02,
     SMOKE_SPREAD: 0.5,
     SMOKE_OPACITY: 0.5,
-    reset: () => gui.reset()
+    reset: () => gui.reset(),
 }
 
-// Inspired on https://github.com/CTR-tools/CTR-ModSDK/blob/8d3c0c6eb262852a150fd50e2b5ad4335f363b15/mods/Modules/ReservesMeter/src/Turbo_Increment.c#L143
-const TURBO_DISAPPEAR_AFTER_QUICKDEATH = 0.1 // Suggested on L#301
-const TURBO_DISAPPEAR_AFTER_SLOWDEATH = 8.5 // 255 frames of 30fps?
-const TURBO_DISAPPEAR_AFTER_NORMALDEATH = 2.1 // 64 frames of 30fps
-// Inspired on https://github.com/CTR-tools/CTR-ModSDK/blob/8d3c0c6eb262852a150fd50e2b5ad4335f363b15/include/namespace_Vehicle.h#L280
-const TURBO_FIRE_SCALE_SMALL_RATIO = 0.25 // // One power-slide and green hang time is 5 (= 1 / 4)
-const TURBO_FIRE_SCALE_MEDIUM_RATIO = 0.5 // Two power-slides and yellow hang time is 6 (= 2 / 4)
-const TURBO_FIRE_SCALE_LARGE_RATIO = 0.75 // Three power-slides, red hang time, and start boost is 7 (= 3 / 4)
-const TURBO_FIRE_SCALE_XLARGE_RATIO = 1 // Turbo pad and USF is 8 (= 4 / 4)
+const TURBO_CONSTANTS = {
+    // Inspired on https://github.com/CTR-tools/CTR-ModSDK/blob/8d3c0c6eb262852a150fd50e2b5ad4335f363b15/mods/Modules/ReservesMeter/src/Turbo_Increment.c#L143
+    TURBO_DISAPPEAR_AFTER_QUICKDEATH: 0.1, // Suggested on L#301
+    TURBO_DISAPPEAR_AFTER_NORMALDEATH: 2.1, // 6/4 frames of 30fps
+    TURBO_DISAPPEAR_AFTER_SLOWDEATH: 8.5, // 255 frames of 30fps?
+    // Inspired on https://github.com/CTR-tools/CTR-ModSDK/blob/8d3c0c6eb262852a150fd50e2b5ad4335f363b15/include/namespace_Vehicle.h#L280
+    TURBO_FIRE_SCALE_SMALL_RATIO: 0.25, // // One power-slide and green hang time is 5 (= 1 / 4)
+    TURBO_FIRE_SCALE_MEDIUM_RATIO: 0.5, // Two power-slides and yellow hang time is 6 (= 2 / 4)
+    TURBO_FIRE_SCALE_LARGE_RATIO: 0.75, // Three power-slides, red hang time, and start boost is 7 (= 3 / 4)
+    TURBO_FIRE_SCALE_XLARGE_RATIO: 1, // Turbo pad and USF is 8 (= 4 / 4)
+    reset: () => gui.reset(),
+}
+
+const ACCELERATION_PROPERTIES = {
+    ACCELERATION: 480, // 0x428, each frame it sums to currentSpeed
+    DEACCELERATION: 130, // checked value frame by frame
+    ACCELERATION_INCREMENT_INTERVAL: 0.03,
+    // ACCELERATION_RESERVES: 1152, // 0x42A, idk
+    SPEED_BASE: 13_140, // 0x42C, max speed without doing turbos
+    SPEED_BASE_SINGLETURBO: 2048, // 0x430
+
+    SPEED_EACH_TURBO: 512,
+
+    SLIDECHARGE_INCREMENT: 32,
+    SLIDECHARGE_INCREMENT_MS: 0.33,
+    SLIDECHARGE_MIN_TURBO: 528,
+    SLIDECHARGE_MAX_VALUE: 960,
+
+    DETUNE_START: -1100,
+    DETUNE_MODIFIER: 0.12
+}
 
 // Preloaded stuff
 let turboModelFrames = []
 let turboTemplate
 let kartModel;
 let smokeSpriteTexture;
+let kartSounds
 
 // Last Intervals
 let lastSmokeSpawn
 
+// Properties - Speed
+let isAccelerating = false
+let currentSpeed = 0
+let targetSpeed = 0 // 0x39C, this is the max speed that it tries to reach
+let currentSlideCharge = 0
+let currentReserves = 0
+
 // Properties
 let currentSmokes = []
 let enableDebugShit = false
-let choppierRotationMode = 0
 let isSoundEnabled = false // To be done
-let isAccelerating = false // To be done
 let isSmokeDark = false
 let isSmokeVisible = true
 let isTurboVisible = false
@@ -102,8 +136,7 @@ async function initialize() {
 
     // Setup scene
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xb2b2b2)
-    // scene.background = new THREE.Color(0x1e1e1e)
+    scene.background = new THREE.Color(0x1e1e1e)
 
     // Add an ambient light to the scene for overall illumination
     // This light intensity matches the model hex colors
@@ -114,9 +147,13 @@ async function initialize() {
     // Setup camera
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.x = 0
-    camera.position.y = 1.82 // 82
-    camera.position.z = -8.5 // -170
+    camera.position.y = 1.82 // 1.82q
+    camera.position.z = -8.5 // -8.5
     camera.updateProjectionMatrix()
+
+    // Setup camera listening
+    audioListener = new THREE.AudioListener();
+    camera.add(audioListener);
 
     // camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000);
     // camera.position.x = 0
@@ -139,6 +176,7 @@ async function initialize() {
     smokeSpriteTexture = loadSmokeSpriteTexture()
     turboModelFrames = await loadAllTurboModelFramesOBJ();
     turboTemplate = createTurboTemplate()
+    kartSounds = await loadKartSounds()
 
     // Create kart group
     kartGroup = new THREE.Group()
@@ -152,15 +190,16 @@ async function initialize() {
     // Create 4 Kart's tires
     createKartTires()
 
+    // Create kart positional audio emitter
+    createKartSoundEmitters()
+
     // Add the Kart to the scene
     scene.add(kartGroup);
 
     // Setup GUI
     gui = new GUI()
+    gui.close()
     setupGUI();
-
-    // Write HTML text
-    writeDebugText()
 
     // Register all listeners
     registerListeners();
@@ -173,23 +212,35 @@ async function initialize() {
 function registerListeners() {
     window.addEventListener('resize', onWindowResize, false);
     document.addEventListener('keydown', onKeyDown, false);
+    document.addEventListener('keyup', onKeyUp, false);
 }
 
 function setupGUI() {
-    gui.add(SMOKE_PROPERTIES, "SMOKE_SPAWN_INTERVAL").step(0.0001)
-    gui.add(SMOKE_PROPERTIES, "SMOKE_LIFETIME").step(0.0001)
-    gui.add(SMOKE_PROPERTIES, "SMOKE_SCALE_MIN").step(0.001)
-    gui.add(SMOKE_PROPERTIES, "SMOKE_SCALE_MAX").step(0.001)
-    gui.add(SMOKE_PROPERTIES, "SMOKE_MOVESPEED").step(0.00001)
-    gui.add(SMOKE_PROPERTIES, "SMOKE_SPREAD").step(0.001)
-    gui.add(SMOKE_PROPERTIES, "SMOKE_OPACITY").step(0.001)
-    gui.add(SMOKE_PROPERTIES, "reset")
+    const smokeProps = gui.addFolder('Smoke Properties');
+    smokeProps.add(SMOKE_CONSTANTS, "SMOKE_SPAWN_INTERVAL").step(0.0001)
+    smokeProps.add(SMOKE_CONSTANTS, "SMOKE_LIFETIME").step(0.0001)
+    smokeProps.add(SMOKE_CONSTANTS, "SMOKE_SCALE_MIN").step(0.001)
+    smokeProps.add(SMOKE_CONSTANTS, "SMOKE_SCALE_MAX").step(0.001)
+    smokeProps.add(SMOKE_CONSTANTS, "SMOKE_MOVESPEED").step(0.00001)
+    smokeProps.add(SMOKE_CONSTANTS, "SMOKE_SPREAD").step(0.001)
+    smokeProps.add(SMOKE_CONSTANTS, "SMOKE_OPACITY").step(0.001)
+    smokeProps.add(SMOKE_CONSTANTS, "reset")
+
+    const turboProps = gui.addFolder('Turbo Properties');
+    turboProps.add(TURBO_CONSTANTS, "TURBO_DISAPPEAR_AFTER_QUICKDEATH")
+    turboProps.add(TURBO_CONSTANTS, "TURBO_DISAPPEAR_AFTER_SLOWDEATH")
+    turboProps.add(TURBO_CONSTANTS, "TURBO_DISAPPEAR_AFTER_NORMALDEATH")
+    turboProps.add(TURBO_CONSTANTS, "TURBO_FIRE_SCALE_SMALL_RATIO")
+    turboProps.add(TURBO_CONSTANTS, "TURBO_FIRE_SCALE_MEDIUM_RATIO")
+    turboProps.add(TURBO_CONSTANTS, "TURBO_FIRE_SCALE_LARGE_RATIO")
+    turboProps.add(TURBO_CONSTANTS, "TURBO_FIRE_SCALE_XLARGE_RATIO")
+    smokeProps.add(TURBO_CONSTANTS, "reset")
 }
 
 // Function to handle key presses
 function onKeyDown(event) {
-    if (event.key == "s") return
-    if (event.key == "d") toggleDebugShit()
+    if (event.key == "s") isSoundEnabled = !isSoundEnabled
+    if (event.key == "w") toggleDebugShit()
 
     if (event.key == "z") {
         camera.position.x = 0
@@ -201,19 +252,15 @@ function onKeyDown(event) {
     }
     if (event.key == "x") controls.autoRotate = !controls.autoRotate;
 
-    if (event.key == "c") {
-        choppierRotationMode += 1
-        if (choppierRotationMode > 2)
-            choppierRotationMode = 0
-    }
-
     if (event.key == "v") return
     if (event.key == "b") isSmokeDark = !isSmokeDark
     if (event.key == "n") isSmokeVisible = !isSmokeVisible
 
-    if (event.key == " ") toggleTurboVisibility()
+    if (event.key == " ") isAccelerating = true
+}
 
-    writeDebugText()
+function onKeyUp(event) {
+    if (event.key == " ") isAccelerating = false
 }
 
 // Resize window function
@@ -329,6 +376,27 @@ async function loadTurboModelFrameOBJ(name) {
     return object;
 }
 
+async function loadKartSounds() {
+    const audioLoader = new THREE.AudioLoader();
+
+    let soundDict = {
+        "kart_engine01": undefined,
+        "kart_enginejet": undefined,
+        "kart_filling": undefined,
+        "kart_hop": undefined,
+        "kart_land": undefined,
+        "kart_tire_skid": undefined,
+    }
+
+    await Promise.all(Object.keys(soundDict).map(async sndName => {
+        soundDict[sndName] = await new Promise((resolve, reject) => {
+            audioLoader.load(`assets/snd/${sndName}.mp3`, resolve);
+        });
+    }))
+
+    return soundDict
+}
+
 function createTurboTemplate() {
     const turboGroup = new THREE.Group()
 
@@ -359,7 +427,7 @@ function createSmoke() {
     const smokeSpriteMaterial = new THREE.SpriteMaterial({ map: smokeSpriteTexture.clone() });
     smokeSpriteMaterial.blending = isSmokeDark ? THREE.SubtractiveBlending : THREE.AdditiveBlending
     smokeSpriteMaterial.depthWrite = false
-    smokeSpriteMaterial.opacity = SMOKE_PROPERTIES.SMOKE_OPACITY
+    smokeSpriteMaterial.opacity = SMOKE_CONSTANTS.SMOKE_OPACITY
 
     const smokeSprite = new THREE.Sprite(smokeSpriteMaterial);
     setSpriteFrame(smokeSprite, smokeSpritesheetProperties, 0, false, 0)
@@ -456,7 +524,7 @@ function createTire() {
 
     // Tire sprite
     const tireSprite = new THREE.Sprite(tireSpriteMaterial);
-    tireSprite.scale.set(TIRE_SCALE, TIRE_SCALE, 1);
+    tireSprite.scale.set(TIRE_CONSTANTS.TIRE_SCALE, TIRE_CONSTANTS.TIRE_SCALE, 1);
 
     // Debug wireframe
     const debugSquareMesh = new THREE.Mesh(debugSquareGeometry, debugSquareMaterial);
@@ -489,10 +557,10 @@ function createTire() {
 // Create 4 Kart's tires
 function createKartTires() {
     const tireLocalPositions = [
-        new THREE.Vector3(-TIRE_POSITION_OFFSET_BACK_X, TIRE_POSITION_OFFSET_Y, -TIRE_POSITION_OFFSET_BACK_Z,), // Back right
-        new THREE.Vector3(-TIRE_POSITION_OFFSET_FRONT_X, TIRE_POSITION_OFFSET_Y, TIRE_POSITION_OFFSET_FRONT_Z,), // Front right
-        new THREE.Vector3(TIRE_POSITION_OFFSET_BACK_X, TIRE_POSITION_OFFSET_Y, -TIRE_POSITION_OFFSET_BACK_Z,), // Back left
-        new THREE.Vector3(TIRE_POSITION_OFFSET_FRONT_X, TIRE_POSITION_OFFSET_Y, TIRE_POSITION_OFFSET_FRONT_Z,), // Front left
+        new THREE.Vector3(-TIRE_CONSTANTS.TIRE_POSITION_OFFSET_BACK_X, TIRE_CONSTANTS.TIRE_POSITION_OFFSET_Y, -TIRE_CONSTANTS.TIRE_POSITION_OFFSET_BACK_Z,), // Back right
+        new THREE.Vector3(-TIRE_CONSTANTS.TIRE_POSITION_OFFSET_FRONT_X, TIRE_CONSTANTS.TIRE_POSITION_OFFSET_Y, TIRE_CONSTANTS.TIRE_POSITION_OFFSET_FRONT_Z,), // Front right
+        new THREE.Vector3(TIRE_CONSTANTS.TIRE_POSITION_OFFSET_BACK_X, TIRE_CONSTANTS.TIRE_POSITION_OFFSET_Y, -TIRE_CONSTANTS.TIRE_POSITION_OFFSET_BACK_Z,), // Back left
+        new THREE.Vector3(TIRE_CONSTANTS.TIRE_POSITION_OFFSET_FRONT_X, TIRE_CONSTANTS.TIRE_POSITION_OFFSET_Y, TIRE_CONSTANTS.TIRE_POSITION_OFFSET_FRONT_Z,), // Front left
     ];
     for (let i = 0; i < 4; i++) {
         const tireNew = createTire()
@@ -500,7 +568,40 @@ function createKartTires() {
         tireNew.name = i
         kartGroup.add(tireNew)
     }
+}
 
+function createKartSoundEmitters() {
+    const engineEmitter = new THREE.PositionalAudio(audioListener);
+    const engineJetEmitter = new THREE.PositionalAudio(audioListener);
+    const engineFillingEmitter = new THREE.PositionalAudio(audioListener);
+    const engineHopEmitter = new THREE.PositionalAudio(audioListener);
+    const engineLandEmitter = new THREE.PositionalAudio(audioListener);
+    const engineSkidEmitter = new THREE.PositionalAudio(audioListener);
+
+    engineEmitter.setBuffer(kartSounds["kart_engine01"])
+    engineJetEmitter.setBuffer(kartSounds["kart_enginejet"])
+    engineFillingEmitter.setBuffer(kartSounds["kart_filling"])
+    engineHopEmitter.setBuffer(kartSounds["kart_hop"])
+    engineLandEmitter.setBuffer(kartSounds["kart_land"])
+    engineSkidEmitter.setBuffer(kartSounds["kart_tire_skid"])
+
+    engineEmitter.setRefDistance(1)
+    engineJetEmitter.setRefDistance(1)
+    engineFillingEmitter.setRefDistance(1)
+    engineHopEmitter.setRefDistance(1)
+    engineLandEmitter.setRefDistance(1)
+    engineSkidEmitter.setRefDistance(1)
+
+    engineEmitter.setLoop(true);
+    engineJetEmitter.setLoop(true);
+    engineSkidEmitter.setLoop(true);
+
+    kartGroup.add(engineEmitter)
+    kartGroup.add(engineJetEmitter)
+    kartGroup.add(engineFillingEmitter)
+    kartGroup.add(engineHopEmitter)
+    kartGroup.add(engineLandEmitter)
+    kartGroup.add(engineSkidEmitter)
 }
 
 // Function to set sprite frame, mirroring and rotation
@@ -600,11 +701,7 @@ function changeTireSpriteBasedOnCamera(tireGroup) {
 
     // I'll get the closest step value to make the rotations more choppy on purpose
     // Kinda matching the low frames of the spritesheet, or make the rotations less noticeable
-    if (choppierRotationMode == 0) {
-        rotationDegree = closestStepValue(rotationDegree, tireTotalFrames / 2)
-    } else if (choppierRotationMode == 1) {
-        rotationDegree = closestStepValue(rotationDegree, tireTotalFrames / 1.5)
-    }
+    rotationDegree = closestStepValue(rotationDegree, tireTotalFrames / 2)
 
     // Determining mirroring the frame based on angleToCameraX
     if (angleToCameraX < -90 || angleToCameraX > 90) {
@@ -653,30 +750,35 @@ function toggleDebugShit() {
     kartGroup.children[2].children[1].visible = enableDebugShit // Tire #2
     kartGroup.children[3].children[1].visible = enableDebugShit // Tire #3
     kartGroup.children[4].children[1].visible = enableDebugShit // Tire #4
-    writeDebugText()
+}
+
+let lastTireColorChange = 0
+function changeTireColor(elapsedClock) {
+    const tire1 = kartGroup.children[1].children[0].material
+    const tire2 = kartGroup.children[2].children[0].material
+    const tire3 = kartGroup.children[3].children[0].material
+    const tire4 = kartGroup.children[4].children[0].material
+
+    const baseFrameDuration = TIRE_CONSTANTS.TIRE_FRAME_CHANGE_RATE;
+    const frameDuration = baseFrameDuration / (currentSpeed / ACCELERATION_PROPERTIES.SPEED_BASE);
+
+    const currentTimeMS = elapsedClock * 1000;
+    const selectedFrame = Math.floor(currentTimeMS / frameDuration) % 2 === 0 ? TIRE_CONSTANTS.TIRE_FRAME1_COLOR : TIRE_CONSTANTS.TIRE_FRAME2_COLOR;
+
+    tire1.color = selectedFrame
+    tire2.color = selectedFrame
+    tire3.color = selectedFrame
+    tire4.color = selectedFrame
 }
 
 function writeDebugText() {
-    // Too lazy to make enums or smth
-    let choppyModeText = ""
-    if (choppierRotationMode == 0) choppyModeText = "Normal"
-    if (choppierRotationMode == 1) choppyModeText = "Choppier"
-    if (choppierRotationMode == 2) choppyModeText = "Disabled"
-
     const lines = [
-        `[S] &mdash; Toggle sound: &mdash; ${isSoundEnabled} (check your volume) « (to be done)`,
-        `[D] &mdash; Toggle debug mode: &mdash; ${enableDebugShit}`,
-        ``,
-        `[Z] &mdash; Reset camera position`,
-        `[X] &mdash; Toggle camera autorotation: &mdash; ${controls.autoRotate}`,
-        ``,
-        `[C] &mdash; Toggle choppy tire sprite rotation mode: &mdash; ${choppyModeText}`,
-        ``,
-        `[V] &mdash; Toggle acceleration (sprite flicker and sound): &mdash; ${isAccelerating} « (to be done)`,
-        `[B] &mdash; Toggle smoke darkness: &mdash; ${isSmokeDark}`,
-        `[N] &mdash; Disable smoke sprite: &mdash; ${isSmokeVisible}`,
-        ``,
-        `[Space] &mdash; Turbo animation « (to be done)`,
+        `isSoundEnabled (S): ${isSoundEnabled}`,
+        `isAccelerating (Space): ${isAccelerating}`,
+        `currentSpeed: ${currentSpeed}`,
+        `targetSpeed: ${targetSpeed}`,
+        // `currentSlideCharge: ${currentSlideCharge}`,
+        // `currentReserves: ${currentReserves}`,
         ``,
         `<a href="https://github.com/ClaudioBo/ctr-kart-threejs">Github</a>`,
     ]
@@ -694,6 +796,8 @@ function render() {
     controls.update();
     stats.update();
 
+    writeDebugText()
+
     renderer.render(scene, camera);
     requestAnimationFrame(render);
 }
@@ -701,10 +805,51 @@ function render() {
 function update() {
     const deltaTime = clock.getDelta()
     const elapsedClock = clock.getElapsedTime();
+
+    doSpeedLogic(elapsedClock)
+    changeTireColor(elapsedClock)
+    doKartSound(elapsedClock)
+
     trySmokeSpawning(elapsedClock)
     doSmokeLogic()
     doTurboAnimation()
     // doRotationDebugLogic(deltaTime)
+}
+
+let lastSpeedLogicTime = 0
+
+function doSpeedLogic(elapsedClock) {
+    if (elapsedClock - lastSpeedLogicTime < ACCELERATION_PROPERTIES.ACCELERATION_INCREMENT_INTERVAL) return
+    lastSpeedLogicTime = elapsedClock
+
+    if (isAccelerating) {
+        targetSpeed = ACCELERATION_PROPERTIES.SPEED_BASE
+    } else {
+        targetSpeed = 0
+    }
+
+    const newSpeed = isAccelerating ? ACCELERATION_PROPERTIES.ACCELERATION : -ACCELERATION_PROPERTIES.DEACCELERATION
+    currentSpeed += newSpeed
+
+    if (currentSpeed > ACCELERATION_PROPERTIES.SPEED_BASE) {
+        currentSpeed = ACCELERATION_PROPERTIES.SPEED_BASE
+    } else if (currentSpeed < 0) {
+        currentSpeed = 0
+    }
+}
+
+let currentDetune = 0
+function doKartSound(elapsedClock) {
+    const kartEngineEmitter = kartGroup.children[5]
+    if (!isSoundEnabled) {
+        if (kartEngineEmitter.isPlaying)
+            kartEngineEmitter.stop()
+    } else {
+        if (!kartEngineEmitter.isPlaying)
+            kartEngineEmitter.play()
+    }
+    currentDetune = ACCELERATION_PROPERTIES.DETUNE_START + (currentSpeed * ACCELERATION_PROPERTIES.DETUNE_MODIFIER)
+    kartEngineEmitter.setDetune(currentDetune)
 }
 
 function doSmokeLogic() {
@@ -714,10 +859,10 @@ function doSmokeLogic() {
         const timeElapsed = smoke.timer.getElapsed()
 
         // Forward vector with small random spread
-        const forwardVector = new THREE.Vector3(randFloat(-SMOKE_PROPERTIES.SMOKE_SPREAD, SMOKE_PROPERTIES.SMOKE_SPREAD), 0, 1)
+        const forwardVector = new THREE.Vector3(randFloat(-SMOKE_CONSTANTS.SMOKE_SPREAD, SMOKE_CONSTANTS.SMOKE_SPREAD), 0, 1)
 
         // Lifetime
-        if (timeElapsed > SMOKE_PROPERTIES.SMOKE_LIFETIME) {
+        if (timeElapsed > SMOKE_CONSTANTS.SMOKE_LIFETIME) {
             currentSmokes.splice(currentSmokes.indexOf(smoke), 1)
             scene.remove(smoke)
             return
@@ -726,7 +871,7 @@ function doSmokeLogic() {
         // Move forward
         const directionVector = forwardVector.clone()
         directionVector.applyQuaternion(smoke.quaternion)
-        directionVector.multiplyScalar(SMOKE_PROPERTIES.SMOKE_MOVESPEED)
+        directionVector.multiplyScalar(SMOKE_CONSTANTS.SMOKE_MOVESPEED)
         smoke.position.add(directionVector)
 
         // Rotation
@@ -735,13 +880,13 @@ function doSmokeLogic() {
         const rotationDegree = SMOKE_ROTATION_RATIO + CURRENT_SMOKE_ROTATION_DEGREE
 
         // Lifetime ratio
-        const SMOKE_LIFETIME_RATIO = (timeElapsed / SMOKE_PROPERTIES.SMOKE_LIFETIME)
+        const SMOKE_LIFETIME_RATIO = (timeElapsed / SMOKE_CONSTANTS.SMOKE_LIFETIME)
 
         // // Opacity
         // smoke.material.opacity = reverseNumber(0, SMOKE_TEST.SMOKE_LIFETIME_RATIO, 1)
 
         // Scale
-        const SMOKE_SCALE_CURRENT = MathUtils.lerp(SMOKE_PROPERTIES.SMOKE_SCALE_MIN, SMOKE_PROPERTIES.SMOKE_SCALE_MAX, SMOKE_LIFETIME_RATIO)
+        const SMOKE_SCALE_CURRENT = MathUtils.lerp(SMOKE_CONSTANTS.SMOKE_SCALE_MIN, SMOKE_CONSTANTS.SMOKE_SCALE_MAX, SMOKE_LIFETIME_RATIO)
         smoke.scale.set(SMOKE_SCALE_CURRENT, SMOKE_SCALE_CURRENT, 1);
 
         // Set frame and rotation
@@ -772,7 +917,7 @@ function doTurboAnimation() {
 
 function trySmokeSpawning(elapsedClock) {
     if (!isSmokeVisible) return
-    if (elapsedClock - lastSmokeSpawn < SMOKE_PROPERTIES.SMOKE_SPAWN_INTERVAL) return
+    if (elapsedClock - lastSmokeSpawn < SMOKE_CONSTANTS.SMOKE_SPAWN_INTERVAL) return
 
     // Get marker positions and rotations relative to world
     const leftExhaustMarker = kartGroup.children[0].children[2]
