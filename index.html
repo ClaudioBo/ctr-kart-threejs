@@ -3,29 +3,18 @@
     <head>
         <meta charset="utf-8" />
         <title>CTR (PSX) Three.js Test</title>
-        <style>
-            body {
-                margin: 0;
-                overflow: hidden;
-            }
-            #debugText {
-                position: absolute;
-                bottom: 10px;
-                left: 10px;
-                color: white;
-                font-family: monospace;
-                font-size: 0.75rem;
-                pointer-events: none;
-            }
-            a {
-                font-weight: bolder;
-                font-size: 1rem;
-                pointer-events: auto;
-            }
-        </style>
+        <link rel="stylesheet" href="./assets/css/style.css" />
     </head>
     <body>
-        <div id="debugText"></div>
+        <div id="overlayContainer">
+            <div>
+                <div class="barContainer">
+                    <div id="currentSpeedBar" class="bar" style="height: 0%"></div>
+                </div>
+            </div>
+            <div id="debug"></div>
+            <a href="https://github.com/ClaudioBo/ctr-kart-threejs"><strong>Github</strong></a>
+        </div>
         <script type="module" src="assets/js/main.js"></script>
     </body>
 </html>
