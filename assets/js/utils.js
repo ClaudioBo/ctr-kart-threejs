@@ -1,4 +1,7 @@
+import * as THREE from 'three';
 import { Timer } from 'three/addons/misc/Timer.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
 // Function to set sprite frame, mirroring and rotation
 export function setSpriteFrame(sprite, spritesheetProperties, frameIndex, mirror = false, rotationDegree = 0) {
@@ -29,6 +32,46 @@ export function setSpriteFrame(sprite, spritesheetProperties, frameIndex, mirror
         sprite.material.map.repeat.x *= -1;
         sprite.material.map.offset.x += repeatX;
     }
+}
+
+export async function loadModel(materialPath, objectPath, shouldMultiplyVertexColors, materialCallback) {
+    // Initialize loaders
+    const mtlLoader = new MTLLoader();
+    const objLoader = new OBJLoader();
+
+    // Load the materials file
+    if (materialPath) {
+        const materials = await new Promise((resolve, reject) => {
+            mtlLoader.load(materialPath, resolve);
+        });
+
+        // Preload materials
+        materials.preload()
+
+        // Set the materials to the object loader
+        objLoader.setMaterials(materials);
+    }
+
+    // Load the object file
+    const model = await new Promise((resolve, reject) => {
+        objLoader.load(objectPath, resolve);
+    });
+
+    // Loop through each material and apply modifications
+    // traverse was needed because iterating with forEach didn't work haha
+    if (materialCallback)
+        model.traverse(child => {
+            if (child instanceof THREE.Mesh) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(material => materialCallback(material));
+                }
+                if (child.geometry?.attributes && shouldMultiplyVertexColors) {
+                    child.geometry.attributes.color.array = child.geometry.attributes.color.array.map(color => color * 4)
+                }
+            }
+        });
+
+    return model;
 }
 
 // Helper function to reverse a number from a range

@@ -57,10 +57,6 @@ export default class Kart extends THREE.Group {
             }
         }
 
-        // Exhaust markers
-        this.leftExhaustMarker
-        this.rightExhaustMarker
-
         // Timers
         this.smokeSpawnTimer = new CustomTimer()
         this.speedLogicTimer = new CustomTimer()
@@ -93,12 +89,16 @@ export default class Kart extends THREE.Group {
     }
 
     calculateExhaustMarkers() {
-        this.leftExhaustMarker = new THREE.Object3D();
-        this.rightExhaustMarker = new THREE.Object3D();
-        this.leftExhaustMarker.position.set(0.2835, 0.715, -0.783)
-        this.rightExhaustMarker.position.set(-0.2835, 0.715, -0.783)
-        this.leftExhaustMarker.rotation.x = this.KART_PROPERTIES.VERTICAL_ROTATION_EXHAUST_OFFSET
-        this.rightExhaustMarker.rotation.x = this.KART_PROPERTIES.VERTICAL_ROTATION_EXHAUST_OFFSET
+        const leftExhaustMarker = new THREE.Object3D();
+        const rightExhaustMarker = new THREE.Object3D();
+        leftExhaustMarker.name = "leftExhaustMarker"
+        rightExhaustMarker.name = "rightExhaustMarker"
+        leftExhaustMarker.position.set(0.2835, 0.715, -0.783)
+        rightExhaustMarker.position.set(-0.2835, 0.715, -0.783)
+        leftExhaustMarker.rotation.x = this.KART_PROPERTIES.VERTICAL_ROTATION_EXHAUST_OFFSET
+        rightExhaustMarker.rotation.x = this.KART_PROPERTIES.VERTICAL_ROTATION_EXHAUST_OFFSET
+        this.add(leftExhaustMarker)
+        this.add(rightExhaustMarker)
     }
 
     addKartModel() {
@@ -112,7 +112,9 @@ export default class Kart extends THREE.Group {
     }
 
     addTurboExhaust() {
-        this.add(new TurboExhaust(this.main, this.leftExhaustMarker, this.rightExhaustMarker))
+        const leftMarker = this.getObjectByName("leftExhaustMarker")
+        const rightMarker = this.getObjectByName("rightExhaustMarker")
+        this.add(new TurboExhaust(this.main, leftMarker, rightMarker))
     }
 
     addShadowPlane() {
@@ -125,11 +127,10 @@ export default class Kart extends THREE.Group {
         const shadowPlaneMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, map: kartShadowTextureCloned });
         shadowPlaneMaterial.blending = THREE.SubtractiveBlending
         const shadowPlane = new THREE.Mesh(shadowPlaneGeometry, shadowPlaneMaterial)
+        shadowPlane.position.y = 0.01
         shadowPlane.position.z = 0.15
         shadowPlane.rotation.x = Math.PI / 2
-        shadowPlane.scale.set(widthRatio * 2.5, heightRatio * 1.5) // Top view
-        // shadowPlane.scale.set(1.5, 1.5)
-        // shadowPlane.scale.set(widthRatio * 2.25, heightRatio * 2.25)
+        shadowPlane.scale.set(widthRatio * 2.5, heightRatio * 1.5)
         this.add(shadowPlane)
     }
 
@@ -190,12 +191,15 @@ export default class Kart extends THREE.Group {
         if (this.smokeSpawnTimer.getElapsed() < this.KART_PROPERTIES.SMOKE_SPAWN_INTERVAL) return
         this.smokeSpawnTimer.resetAll()
 
-        const leftExhaustPosition = this.leftExhaustMarker.getWorldPosition(new THREE.Vector3())
-        const rightExhaustPosition = this.rightExhaustMarker.getWorldPosition(new THREE.Vector3())
+        const leftMarker = this.getObjectByName("leftExhaustMarker")
+        const rightMarker = this.getObjectByName("rightExhaustMarker")
+
+        const leftExhaustPosition = leftMarker.getWorldPosition(new THREE.Vector3())
+        const rightExhaustPosition = rightMarker.getWorldPosition(new THREE.Vector3())
 
         // Get kart's rotation relative to world
-        const leftExhaustRotation = this.leftExhaustMarker.getWorldQuaternion(new THREE.Quaternion());
-        const rightExhaustRotation = this.rightExhaustMarker.getWorldQuaternion(new THREE.Quaternion());
+        const leftExhaustRotation = leftMarker.getWorldQuaternion(new THREE.Quaternion());
+        const rightExhaustRotation = rightMarker.getWorldQuaternion(new THREE.Quaternion());
 
         // Clone the smokes
         const smokeLeft = new Smoke(this.main, this)

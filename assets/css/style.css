@@ -3,7 +3,7 @@ body {
     overflow: hidden;
 }
 
-/* #overlayImage {
+#overlayImage {
     position        : absolute;
     top             : 0;
     left            : 0;
@@ -13,7 +13,7 @@ body {
     opacity         : 0.5;
     z-index         : 9999;
     pointer-events: none;
-} */
+}
 
 #overlayContainer {
     position      : absolute;

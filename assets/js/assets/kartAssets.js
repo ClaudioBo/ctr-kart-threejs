@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+
+import { loadModel } from '../utils.js';
 
 export default class KartAssets {
     constructor() {
@@ -46,15 +46,11 @@ export default class KartAssets {
     }
 
     async loadKartModel() {
-        // Constants
         const materialPath = 'assets/models/crash/crash.mtl'
         const objectPath = 'assets/models/crash/crash.obj'
 
-        // Load model and apply custom callback for the materials
-        this.kartModel = await this.loadModel(materialPath, objectPath, material => {
-            // Enable material vertex colors
+        this.kartModel = await loadModel(materialPath, objectPath, true, material => {
             material.vertexColors = true
-            // Disable texture filtering
             if (!!material.map) {
                 material.map.magFilter = THREE.NearestFilter;
                 material.map.minFilter = THREE.NearestFilter;
@@ -100,7 +96,7 @@ export default class KartAssets {
         for (let i = 0; i < TURBO_FRAME_NAMES.length; i++) {
             const turboName = TURBO_FRAME_NAMES[i];
             const objectPath = `assets/models/turbo/${turboName}.obj`
-            const loadedModel = await this.loadModel(materialPath, objectPath, material => {
+            const loadedModel = await loadModel(materialPath, objectPath, true, material => {
                 if (!!material.map) {
                     material.map.magFilter = THREE.NearestFilter;
                     material.map.minFilter = THREE.NearestFilter;
@@ -116,41 +112,6 @@ export default class KartAssets {
         }
 
         this.turboModels = arrayModels
-    }
-
-    async loadModel(materialPath, objectPath, materialCallback) {
-        // Initialize loaders
-        const mtlLoader = new MTLLoader();
-        const objLoader = new OBJLoader();
-
-        // Load the materials file
-        const materials = await new Promise((resolve, reject) => {
-            mtlLoader.load(materialPath, resolve);
-        });
-
-        // Preload materials
-        materials.preload()
-
-        // Set the materials to the object loader
-        objLoader.setMaterials(materials);
-
-        // Load the object file
-        const model = await new Promise((resolve, reject) => {
-            objLoader.load(objectPath, resolve);
-        });
-
-        // Loop through each material and apply modifications
-        // traverse was needed because iterating with forEach didn't work haha
-        if (materialCallback)
-            model.traverse(child => {
-                if (child instanceof THREE.Mesh) {
-                    if (Array.isArray(child.material)) {
-                        child.material.forEach(material => materialCallback(material));
-                    }
-                }
-            });
-
-        return model;
     }
 
 }

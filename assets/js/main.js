@@ -10,6 +10,8 @@ import DebugManager from './managers/debugManager.js';
 
 // Game Objects
 import Kart from './gameobjects/kart.js';
+import DefaultScene from './scene/default.js';
+import SlideColiseumScene from './scene/slideColiseum.js';
 
 export default class Main {
     constructor() {
@@ -36,6 +38,7 @@ export default class Main {
     async initialize() {
         this.setupBasic()
         await this.setupManagers()
+        this.setupScene()
         this.registerListeners()
         this.addGameObjects()
         this.loop()
@@ -45,7 +48,6 @@ export default class Main {
         this.setupRenderer()
         this.setupStats()
         this.setupClock()
-        this.setupScene()
         this.setupCamera()
         this.setupGUI()
     }
@@ -59,6 +61,7 @@ export default class Main {
 
     addGameObjects() {
         const kart = new Kart(this)
+        kart.position.add(this.scene.startPoint)
         this.mainKart = kart
         this.gameObjects.push(kart)
         this.scene.add(kart)
@@ -109,17 +112,14 @@ export default class Main {
 
     setupScene() {
         // Setup scene
-        this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x1e1e1e)
+        // this.scene = new DefaultScene();
+        this.scene = new SlideColiseumScene(this);
 
         // Add an ambient light to the scene for overall illumination
         // This light intensity matches the model hex colors
         // TODO: This light intensity shouldn't be too intense, makes other models too bright
-        const ambientLight = new THREE.AmbientLight(0xffffff, 12.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 2);
         this.scene.add(ambientLight);
-
-        const gridHelper = new THREE.GridHelper(512, 32)
-        this.scene.add(gridHelper)
     }
 
     setupCamera() {

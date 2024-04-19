@@ -77,11 +77,27 @@ https://www.claudiobo.com/ctr-kart-threejs
 -   [x] Change sprite depending on camera's view based on vertical axis
 -   [x] Implement Smoke with togglable darkness and toggable visibility
 -   [x] Implement Turbo animation
--   [ ] Implement some sort of basic speed, reserves, fire level, sliding mechanics (talking about the times) just to be able to implement the next list of TO-DO chores
-    -   [ ] Implement Tire's color palette modification to simulate forward motion
+-   [x] Find a way to render the ctr models correctly without maxing heavily out the ambient light intensity &mdash; solution was multiplying all vertex colors by 4
+-   [ ] Implement some sort of basic speed, and acceleration just to be able to implement the next list of TO-DO chores
+    -   [x] Implement Tire's color palette modification to simulate forward motion
+    -   [x] Implement Kart sounds
     -   [ ] Implement Turbo different scales depending on the 3 consecutive turbos
-    -   [ ] Implement Kart sounds
--   [ ] Find a way to render the kart model correctly without maxing heavily out the ambient light intensity &mdash; `Change MeshPhongMaterial to MeshStandardMaterial or MeshBasicMaterial`
+-   [ ] Implement basic physics
+    -   [ ] Add `ground` model
+    -   [ ] Add `wall` model
+    -   [ ] Make kart move
+    -   [ ] Make kart jump
+    -   [ ] Try to imitate original game by getting RAM values and constants
+-   [ ] Implement skid effect
+-   [ ] Make camera follow player
+-   [ ] Make camera toggle between the two distances
+-   [ ] Implement model rotation by imitating the game by playing with some RAM values
+    -   Freeze ram address 0x######
+    -   Freeze ram address 0x######
+    -   Freeze ram address 0x######
+-   [ ] Implement sliding mechanics
+-   [ ] Implement reserves
+-   [ ] Implement fire level
 
 ## Run server
 
