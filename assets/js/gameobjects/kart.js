@@ -14,12 +14,18 @@ export default class Kart extends THREE.Group {
 
         // Constants
         this.KART_PROPERTIES = {
-            VERTICAL_ROTATION_EXHAUST_OFFSET: 3.5,
+            VERTICAL_ROTATION_EXHAUST_OFFSET: 3.75,
             SMOKE_SPAWN_INTERVAL: 0.03 // Spawns each frame (1 / 30fps = 0.0333333333333333)
+        }
+        this.PHYSICS_PROPERTIES = {
+            JUMP_COOLDOWN: 352, //0x3f2 (24)
+            JUMP_COYOTE_MS: 160, //0x3f4 (10)
+            GRAVITY: 900, //0x416 (56.2500)
+            JUMP_FORCE: 4596, //0x418 (287.2500)
         }
         this.ACCELERATION_PROPERTIES = {
             ACCELERATION: 480, // 0x428, each frame it sums to currentSpeed
-            DEACCELERATION: 130, // checked value frame by frame
+            DECELERATION: 130, // checked value frame by frame
             ACCELERATION_INCREMENT_INTERVAL: 0.03,
             // ACCELERATION_RESERVES: 1152, // 0x42A, idk
             SPEED_BASE: 13_140, // 0x42C, max speed without doing turbos
@@ -31,6 +37,24 @@ export default class Kart extends THREE.Group {
             SLIDECHARGE_MAX_VALUE: 960,
             DETUNE_START: -1100,
             DETUNE_MODIFIER: 0.12
+        }
+        this.DISTANCES_PROPERTIES = {
+            CAMERA_DISTANCE: {
+                CLOSE: {
+                    xDist: 0,
+                    yDist: 1.81,
+                    zDist: -2.77,
+                    xRot: -0.1,
+                    yRot: Math.PI
+                },
+                FAR: {
+                    xDist: 0,
+                    yDist: 2.25,
+                    zDist: -3.4,
+                    xRot: 0.09,
+                    yRot: Math.PI
+                }
+            }
         }
 
         // Exhaust markers
@@ -64,6 +88,7 @@ export default class Kart extends THREE.Group {
         this.addKartModel()
         this.addKartTires()
         this.addTurboExhaust()
+        this.addShadowPlane()
         this.addSoundEmitters()
     }
 
@@ -88,6 +113,24 @@ export default class Kart extends THREE.Group {
 
     addTurboExhaust() {
         this.add(new TurboExhaust(this.main, this.leftExhaustMarker, this.rightExhaustMarker))
+    }
+
+    addShadowPlane() {
+        const kartShadowTextureCloned = this.main.assetsManager.kartAssets.shadowTexture.clone()
+
+        const widthRatio = kartShadowTextureCloned.source.data.width / kartShadowTextureCloned.source.data.height
+        const heightRatio = kartShadowTextureCloned.source.data.height / kartShadowTextureCloned.source.data.width
+
+        const shadowPlaneGeometry = new THREE.PlaneGeometry(widthRatio, heightRatio)
+        const shadowPlaneMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, map: kartShadowTextureCloned });
+        shadowPlaneMaterial.blending = THREE.SubtractiveBlending
+        const shadowPlane = new THREE.Mesh(shadowPlaneGeometry, shadowPlaneMaterial)
+        shadowPlane.position.z = 0.15
+        shadowPlane.rotation.x = Math.PI / 2
+        shadowPlane.scale.set(widthRatio * 2.5, heightRatio * 1.5) // Top view
+        // shadowPlane.scale.set(1.5, 1.5)
+        // shadowPlane.scale.set(widthRatio * 2.25, heightRatio * 2.25)
+        this.add(shadowPlane)
     }
 
     addSoundEmitters() {
@@ -189,25 +232,26 @@ export default class Kart extends THREE.Group {
         this.main.scene.add(smokeRight)
     }
 
-    doSpeedLogic() {
-        this.speedLogicTimer.update()
-        if (this.speedLogicTimer.getElapsed() < this.ACCELERATION_PROPERTIES.ACCELERATION_INCREMENT_INTERVAL) return
-        this.speedLogicTimer.resetAll()
+    handleKeyDown(key) {
+        if (key === " ") this.isAccelerating = true
+    }
 
-        if (this.isAccelerating) {
-            this.targetSpeed = this.ACCELERATION_PROPERTIES.SPEED_BASE
-        } else {
-            this.targetSpeed = 0
-        }
+    handleKeyUp(key) {
+        if (key === " ") this.isAccelerating = false
+    }
 
-        const newSpeed = this.isAccelerating ? this.ACCELERATION_PROPERTIES.ACCELERATION : -this.ACCELERATION_PROPERTIES.DEACCELERATION
-        this.currentSpeed += newSpeed
+    doSpeedLogic(deltaTime) {
+        // Calculate equivalent acceleration and deceleration based on the acceleration increment interval
+        const equivalentAcceleration = this.ACCELERATION_PROPERTIES.ACCELERATION / this.ACCELERATION_PROPERTIES.ACCELERATION_INCREMENT_INTERVAL;
+        const equivalentDeceleration = this.ACCELERATION_PROPERTIES.DECELERATION / this.ACCELERATION_PROPERTIES.ACCELERATION_INCREMENT_INTERVAL;
+        const acceleration = this.isAccelerating ? equivalentAcceleration : -equivalentDeceleration;
 
-        if (this.currentSpeed > this.ACCELERATION_PROPERTIES.SPEED_BASE) {
-            this.currentSpeed = this.ACCELERATION_PROPERTIES.SPEED_BASE
-        } else if (this.currentSpeed < 0) {
-            this.currentSpeed = 0
-        }
+        // Calculate the change in speed based on acceleration and deltaTime
+        const speedChange = acceleration * deltaTime;
+        this.currentSpeed += speedChange;
+
+        // Cap the speed
+        this.currentSpeed = Math.min(Math.max(this.currentSpeed, 0), this.ACCELERATION_PROPERTIES.SPEED_BASE);
     }
 
     doKartSound() {
@@ -235,7 +279,7 @@ export default class Kart extends THREE.Group {
         if (this.isSmokeVisible) this.doSmokeSpawning()
 
         // Speed logic
-        this.doSpeedLogic()
+        this.doSpeedLogic(deltaTime)
 
         // Sound
         this.doKartSound()

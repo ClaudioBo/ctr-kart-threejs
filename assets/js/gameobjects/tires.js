@@ -11,7 +11,7 @@ export default class Tires extends THREE.Group {
         this.name = "tires"
 
         // Constants
-        this.TIRE_SCALE = 0.45; // by eye: 0.45, original short value 0xCCC (3276), converted to Float and multiplied by 0.1 = 0.45xxxx
+        this.TIRE_SCALE = 0.5; // by eye: 0.45, original short value 0xCCC (3276), converted to Float and multiplied by 0.1 = 0.45xxxx
         this.TIRE_POSITION_OFFSET_Y = 0.25;
         this.TIRE_POSITION_OFFSET_BACK_X = 0.575;
         this.TIRE_POSITION_OFFSET_FRONT_X = 0.575;

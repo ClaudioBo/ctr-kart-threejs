@@ -3,6 +3,18 @@ body {
     overflow: hidden;
 }
 
+/* #overlayImage {
+    position        : absolute;
+    top             : 0;
+    left            : 0;
+    width           : 100%;
+    height          : 100%;
+    background-image: url("../img/overlay2.png");
+    opacity         : 0.5;
+    z-index         : 9999;
+    pointer-events: none;
+} */
+
 #overlayContainer {
     position      : absolute;
     bottom        : 10px;
@@ -13,7 +25,7 @@ body {
     pointer-events: none;
 }
 
-.barContainer { 
+.barContainer {
     background-color      : #005f5f;
     position              : relative;
     bottom                : 50%;

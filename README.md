@@ -9,9 +9,9 @@ I'm also trying out `Three.js` so I can learn 😂
 -   Kart model downloaded from [The Models Resource](https://www.models-resource.com/playstation/crashteamracing/model/61792/), thanks to [CTR-Tools by DCxDemo\*](https://github.com/CTR-tools/CTR-tools).
 -   Tire spritesheet ripped by me and uploaded to [The Spriters Resource](https://www.spriters-resource.com/playstation/ctr/sheet/116430/).
 -   Kart smoke spritesheet ripped by me and yet needs to be uploaded to **The Spriters Resource**.
-
-<!-- - Kart sounds ripped by [DCxDemo\* with CTR-Tools ](https://github.com/CTR-tools/CTR-tools).   -->
-<!-- - Kart turbo model ripped by [DCxDemo\* with CTR-Tools ](https://github.com/CTR-tools/CTR-tools). Slightly modified by me   -->
+-   Kart shadow texture ripped by me and yet needs to be uploaded to **The Spriters Resource**.
+-   Kart sounds ripped by [DCxDemo\* with CTR-Tools ](https://github.com/CTR-tools/CTR-tools).
+-   Kart turbo model ripped by [DCxDemo\* with CTR-Tools ](https://github.com/CTR-tools/CTR-tools). Slightly modified by me
 
 ## Live example
 

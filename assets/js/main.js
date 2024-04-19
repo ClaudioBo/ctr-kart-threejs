@@ -18,7 +18,6 @@ export default class Main {
         this.stats;
         this.scene;
         this.camera;
-        this.cameraControls;
         this.clock;
         this.gui;
 
@@ -38,9 +37,7 @@ export default class Main {
         this.setupBasic()
         await this.setupManagers()
         this.registerListeners()
-
         this.addGameObjects()
-
         this.loop()
     }
 
@@ -50,6 +47,7 @@ export default class Main {
         this.setupClock()
         this.setupScene()
         this.setupCamera()
+        this.setupGUI()
     }
 
     async setupManagers() {
@@ -71,7 +69,6 @@ export default class Main {
         const deltaTime = this.clock.getDelta()
 
         // Actualizar logica
-        this.cameraControls.update();
         this.stats.update();
 
         // Actualizar logica de GameObjects
@@ -120,14 +117,19 @@ export default class Main {
         // TODO: This light intensity shouldn't be too intense, makes other models too bright
         const ambientLight = new THREE.AmbientLight(0xffffff, 12.6);
         this.scene.add(ambientLight);
+
+        const gridHelper = new THREE.GridHelper(512, 32)
+        this.scene.add(gridHelper)
     }
 
     setupCamera() {
         // Setup PerspectiveCamera
-        this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.position.x = 0
-        this.camera.position.y = 1.82 // 1.82q
-        this.camera.position.z = -8.5 // -8.5
+        this.camera.position.y = 2.25
+        this.camera.position.z = -3.4
+        this.camera.rotation.x = 0.09
+        this.camera.rotation.y = Math.PI
         this.camera.updateProjectionMatrix()
 
         // // Setup OrthographicCamera
@@ -138,11 +140,6 @@ export default class Main {
         // this.camera.zoom = 250
         // this.camera.updateProjectionMatrix()
 
-        // Setup camera controls
-        this.cameraControls = new OrbitControls(this.camera, this.renderer.domElement);
-        this.cameraControls.enableDamping = true
-        this.cameraControls.autoRotate = false
-
         // Setup camera listening
         const audioListener = new THREE.AudioListener();
         audioListener.name = "audioListener"
@@ -151,7 +148,7 @@ export default class Main {
 
     setupGUI() {
         this.gui = new GUI()
-        this.gui.close()
+        // this.gui.close()
     }
 
     onWindowResize() {
@@ -161,13 +158,13 @@ export default class Main {
     }
 
     onKeyDown(event) {
+        this.debugManager.handleKeyDown(event.key)
+        this.mainKart.handleKeyDown(event.key)
         if (event.key == "s") this.isSoundEnabled = !this.isSoundEnabled
-
-        if (event.key == " ") this.mainKart.isAccelerating = true
     }
 
     onKeyUp(event) {
-        if (event.key == " ") this.mainKart.isAccelerating = false
+        this.mainKart.handleKeyUp(event.key)
     }
 }
 

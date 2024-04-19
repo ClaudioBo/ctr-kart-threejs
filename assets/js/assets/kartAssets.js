@@ -4,6 +4,7 @@ import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
 export default class KartAssets {
     constructor() {
+        this.shadowTexture;
         this.smokeTexture;
         this.tireTexture;
         this.kartModel;
@@ -12,11 +13,20 @@ export default class KartAssets {
     }
 
     async loadAssets() {
+        this.loadKartShadowTexture()
         this.loadSmokeSpriteTexture()
         this.loadTireSpriteTexture()
         await this.loadKartModel()
         await this.loadKartSounds()
         await this.loadTurboModelFrames()
+    }
+
+    loadKartShadowTexture() {
+        const loadedShadowTexture = new THREE.TextureLoader().load('assets/img/kart-shadow.png');
+        loadedShadowTexture.magFilter = THREE.NearestFilter;
+        loadedShadowTexture.minFilter = THREE.NearestFilter;
+        loadedShadowTexture.colorSpace = THREE.SRGBColorSpace;
+        this.shadowTexture = loadedShadowTexture
     }
 
     loadSmokeSpriteTexture() {
