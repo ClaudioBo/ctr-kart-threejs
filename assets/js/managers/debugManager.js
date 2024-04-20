@@ -3,20 +3,22 @@
 export default class DebugManager {
     constructor(main) {
         this.main = main
-        this.addToGUI()
     }
 
     updateDebugText() {
         const lines = [
             `isSoundEnabled (S): ${this.main.isSoundEnabled}`,
             ``,
-            `isAccelerating (Space): ${this.main.mainKart.isAccelerating}`,
             `currentSpeed: ${this.main.mainKart.currentSpeed}`,
             `targetSpeed: ${this.main.mainKart.targetSpeed}`,
             ``,
             `currentSlideCharge: ${this.main.mainKart.currentSlideCharge}`,
             `currentReserves: ${this.main.mainKart.currentReserves}`,
             `turboVisibilityTime: 0.0`,
+            ``,
+            `isClose (A): ${this.main.gameCamera.isClose}`,
+            `isMirror (D): ${this.main.gameCamera.isMirror}`,
+            `isAccelerating (X): ${this.main.mainKart.isAccelerating}`,
             // `currentSlideCharge: ${currentSlideCharge}`,
             // `currentReserves: ${currentReserves}`,
         ]
@@ -32,19 +34,19 @@ export default class DebugManager {
     }
 
     addToGUI(){
-        const cameraFolder = this.main.gui.addFolder("Camera")
+        const kartFolder = this.main.gui.addFolder("Kart")
         const step = 0.01
-        cameraFolder.add(this.main.camera.position, "x").step(step)
-        cameraFolder.add(this.main.camera.position, "y").step(step)
-        cameraFolder.add(this.main.camera.position, "z").step(step)
-        cameraFolder.add(this.main.camera.rotation, "x").name("xRot").step(0.0001)
-        cameraFolder.add(this.main.camera.rotation, "y").name("yRot").step(0.0001)
-        cameraFolder.add(this.main.camera.rotation, "z").name("zRot").step(0.0001)
+        kartFolder.add(this.main.mainKart.position, "x").step(step)
+        kartFolder.add(this.main.mainKart.position, "y").step(step)
+        kartFolder.add(this.main.mainKart.position, "z").step(step)
+        kartFolder.add(this.main.mainKart.rotation, "x").name("xRot").step(0.0001)
+        kartFolder.add(this.main.mainKart.rotation, "y").name("yRot").step(0.0001)
+        kartFolder.add(this.main.mainKart.rotation, "z").name("zRot").step(0.0001)
     }
 
     updateDebugBars() {
         const speedPercentage = (this.main.mainKart.currentSpeed * 100) / this.main.mainKart.ACCELERATION_PROPERTIES.SPEED_BASE
-        document.getElementById("currentSpeedBar").style.setProperty("height", `${speedPercentage}%`)
+        document.getElementById("currentSpeedbar").style.setProperty("height", `${speedPercentage}%`)
     }
 
     update() {

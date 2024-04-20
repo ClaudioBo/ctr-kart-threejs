@@ -34,7 +34,7 @@ export function setSpriteFrame(sprite, spritesheetProperties, frameIndex, mirror
     }
 }
 
-export async function loadModel(materialPath, objectPath, shouldMultiplyVertexColors, materialCallback) {
+export async function loadModel(materialPath, objectPath, shouldMultiplyVertexColors = false, materialCallback = undefined) {
     // Initialize loaders
     const mtlLoader = new MTLLoader();
     const objLoader = new OBJLoader();

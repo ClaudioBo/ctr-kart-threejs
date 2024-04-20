@@ -89,8 +89,10 @@ https://www.claudiobo.com/ctr-kart-threejs
     -   [ ] Make kart jump
     -   [ ] Try to imitate original game by getting RAM values and constants
 -   [ ] Implement skid effect
--   [ ] Make camera follow player
--   [ ] Make camera toggle between the two distances
+-   [x] Make camera follow player
+-   [ ] Make camera distance dynamic
+-   [x] Make camera toggle between close and far distance mode
+-   [x] Make camera toggle reverse mirror mode
 -   [ ] Implement model rotation by imitating the game by playing with some RAM values
     -   Freeze ram address 0x######
     -   Freeze ram address 0x######

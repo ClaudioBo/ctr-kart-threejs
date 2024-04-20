@@ -14,9 +14,10 @@ export default class Smoke extends THREE.Group {
         this.sprite
 
         // Constants
+        this.SMOKE_BASE_SCALE = this.kart.scaleKart;
         this.SMOKE_LIFETIME = 0.16; // Lifetime is 5 frames (5 / 30fps = 0.1666666666666667)
-        this.SMOKE_SCALE_MIN = 0.5;
-        this.SMOKE_SCALE_MAX = 1.0;
+        this.SMOKE_SCALE_MIN = Math.abs(this.SMOKE_BASE_SCALE - 0.5);
+        this.SMOKE_SCALE_MAX = Math.abs(this.SMOKE_BASE_SCALE - 1.0);
         this.SMOKE_MOVESPEED = 0.02;
         this.SMOKE_SPREAD = 0.5;
         this.SMOKE_OPACITY = 0.5;
@@ -48,6 +49,7 @@ export default class Smoke extends THREE.Group {
 
         setSpriteFrame(smokeSprite, this.SPRITESHEET_PROPERTIES, 0, false, 0)
         this.sprite = smokeSprite
+        this.scale.set(0, 0, 0)
         this.add(smokeSprite)
     }
 

@@ -38,24 +38,6 @@ export default class Kart extends THREE.Group {
             DETUNE_START: -1100,
             DETUNE_MODIFIER: 0.12
         }
-        this.DISTANCES_PROPERTIES = {
-            CAMERA_DISTANCE: {
-                CLOSE: {
-                    xDist: 0,
-                    yDist: 1.81,
-                    zDist: -2.77,
-                    xRot: -0.1,
-                    yRot: Math.PI
-                },
-                FAR: {
-                    xDist: 0,
-                    yDist: 2.25,
-                    zDist: -3.4,
-                    xRot: 0.09,
-                    yRot: Math.PI
-                }
-            }
-        }
 
         // Timers
         this.smokeSpawnTimer = new CustomTimer()
@@ -76,6 +58,8 @@ export default class Kart extends THREE.Group {
         this.currentReserves = 0
 
         // Initialize
+        this.scaleKart = 0.3276 * 1.5
+        this.scale.set(this.scaleKart, this.scaleKart, this.scaleKart)
         this.initialize()
     }
 
@@ -135,7 +119,7 @@ export default class Kart extends THREE.Group {
     }
 
     addSoundEmitters() {
-        const cameraAudioListener = this.main.camera.getObjectByName("audioListener")
+        const cameraAudioListener = this.main.gameCamera.getObjectByName("audioListener")
         const engineEmitter = new THREE.PositionalAudio(cameraAudioListener);
         const engineJetEmitter = new THREE.PositionalAudio(cameraAudioListener);
         const engineFillingEmitter = new THREE.PositionalAudio(cameraAudioListener);
@@ -213,11 +197,12 @@ export default class Kart extends THREE.Group {
         smokeLeft.setRotationFromQuaternion(leftExhaustRotation);
         smokeRight.setRotationFromQuaternion(rightExhaustRotation);
 
-        // Offset the position a little bit up because smoke 1st frame is offset
-        // and then a little bit far away from the exhaust bc its like that in the real game
-        const OFFSET_VECTOR = new THREE.Vector3(0, 0.1, -0.05)
-        smokeLeft.position.add(OFFSET_VECTOR)
-        smokeRight.position.add(OFFSET_VECTOR)
+        // TODO: New kart scaling and current rotation fucks up this, fix later
+        // // Offset the position a little bit up because smoke 1st frame is offset
+        // // and then a little bit far away from the exhaust bc its like that in the real game
+        // const OFFSET_VECTOR = new THREE.Vector3(0, 0.1, -0.05).getWorldPosition(new THREE.Vector3())
+        // smokeLeft.position.add(OFFSET_VECTOR)
+        // smokeRight.position.add(OFFSET_VECTOR)
 
         // Random speed value & 50% chance to invert the speed
         let randomSpeed = randInt(1, 2)
@@ -237,11 +222,11 @@ export default class Kart extends THREE.Group {
     }
 
     handleKeyDown(key) {
-        if (key === " ") this.isAccelerating = true
+        if (key === "x") this.isAccelerating = true
     }
 
     handleKeyUp(key) {
-        if (key === " ") this.isAccelerating = false
+        if (key === "x") this.isAccelerating = false
     }
 
     doSpeedLogic(deltaTime) {

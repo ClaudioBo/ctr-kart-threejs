@@ -12,6 +12,7 @@ import DebugManager from './managers/debugManager.js';
 import Kart from './gameobjects/kart.js';
 import DefaultScene from './scene/default.js';
 import SlideColiseumScene from './scene/slideColiseum.js';
+import GameCamera from './gameobjects/gameCamera.js';
 
 export default class Main {
     constructor() {
@@ -19,7 +20,6 @@ export default class Main {
         this.renderer;
         this.stats;
         this.scene;
-        this.camera;
         this.clock;
         this.gui;
 
@@ -31,16 +31,19 @@ export default class Main {
         this.isSoundEnabled = false
 
         // Game objects
+        this.gameCamera;
         this.mainKart;
         this.gameObjects = [];
     }
 
     async initialize() {
         this.setupBasic()
+        this.setupGUI()
         await this.setupManagers()
         this.setupScene()
         this.registerListeners()
         this.addGameObjects()
+        this.debugManager.addToGUI()
         this.loop()
     }
 
@@ -48,8 +51,6 @@ export default class Main {
         this.setupRenderer()
         this.setupStats()
         this.setupClock()
-        this.setupCamera()
-        this.setupGUI()
     }
 
     async setupManagers() {
@@ -60,9 +61,16 @@ export default class Main {
     }
 
     addGameObjects() {
+        this.setupGameCamera()
+
+        // Test add Kart object
         const kart = new Kart(this)
-        kart.position.add(this.scene.startPoint)
         this.mainKart = kart
+        kart.position.add(this.scene.startPointPosition)
+        kart.rotation.x = this.scene.startPointRotation.x
+        kart.rotation.y = this.scene.startPointRotation.y
+        kart.rotation.z = this.scene.startPointRotation.z
+        this.gameCamera.followPlayer(this.mainKart)
         this.gameObjects.push(kart)
         this.scene.add(kart)
     }
@@ -76,13 +84,14 @@ export default class Main {
 
         // Actualizar logica de GameObjects
         this.gameObjects.forEach(obj => obj.update(deltaTime))
+        this.gameCamera.update(deltaTime)
 
         // Actualizar dibujos
         // ...
 
         // Renderizado y loopeo
         this.debugManager.update()
-        this.renderer.render(this.scene, this.camera);
+        this.renderer.render(this.scene, this.gameCamera);
         requestAnimationFrame(() => this.loop());
     }
 
@@ -122,49 +131,33 @@ export default class Main {
         this.scene.add(ambientLight);
     }
 
-    setupCamera() {
-        // Setup PerspectiveCamera
-        this.camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.camera.position.x = 0
-        this.camera.position.y = 2.25
-        this.camera.position.z = -3.4
-        this.camera.rotation.x = 0.09
-        this.camera.rotation.y = Math.PI
-        this.camera.updateProjectionMatrix()
-
-        // // Setup OrthographicCamera
-        // this.camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000);
-        // this.camera.position.x = 0
-        // this.camera.position.y = 0
-        // this.camera.position.z = -3
-        // this.camera.zoom = 250
-        // this.camera.updateProjectionMatrix()
-
-        // Setup camera listening
-        const audioListener = new THREE.AudioListener();
-        audioListener.name = "audioListener"
-        this.camera.add(audioListener);
+    setupGameCamera() {
+        this.gameCamera = new GameCamera(this, 90, window.innerWidth / window.innerHeight, 0.1, 1000);
     }
 
     setupGUI() {
         this.gui = new GUI()
-        // this.gui.close()
+        this.gui.close()
     }
 
     onWindowResize() {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix();
+        this.gameCamera.aspect = window.innerWidth / window.innerHeight;
+        this.gameCamera.updateProjectionMatrix();
     }
 
     onKeyDown(event) {
-        this.debugManager.handleKeyDown(event.key)
-        this.mainKart.handleKeyDown(event.key)
-        if (event.key == "s") this.isSoundEnabled = !this.isSoundEnabled
+        const keyPressed = event.key.toLowerCase()
+        this.debugManager.handleKeyDown(keyPressed)
+        this.mainKart.handleKeyDown(keyPressed)
+        this.gameCamera.handleKeyDown(keyPressed)
+        if (keyPressed == "s") this.isSoundEnabled = !this.isSoundEnabled
     }
-
+    
     onKeyUp(event) {
-        this.mainKart.handleKeyUp(event.key)
+        const keyReleased = event.key.toLowerCase()
+        this.mainKart.handleKeyUp(keyReleased)
+        this.gameCamera.handleKeyUp(keyReleased)
     }
 }
 

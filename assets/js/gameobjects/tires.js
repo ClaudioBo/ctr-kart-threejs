@@ -145,7 +145,7 @@ export default class Tires extends THREE.Group {
     }
 
     updateKartTireFrames() {
-        this.children.forEach(sprite => this.changeTireSpriteBasedOnCamera(sprite, this.main.camera))
+        this.children.forEach(sprite => this.changeTireSpriteBasedOnCamera(sprite, this.main.gameCamera))
     }
 
     update() {
