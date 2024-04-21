@@ -40,6 +40,14 @@ export default class DebugManager {
         kartFolder.add(this.main.mainKart.rotation, "x").step(0.001).name("xRot")
         kartFolder.add(this.main.mainKart.rotation, "y").step(0.001).name("yRot")
         kartFolder.add(this.main.mainKart.rotation, "z").step(0.001).name("zRot")
+        const cameraDistanceFolder = this.main.gui.addFolder("Camera Distance")
+        cameraDistanceFolder.add(this.main.gameCamera.test, "x").step(0.001).onChange(() => this.main.gameCamera.updateTest())
+        cameraDistanceFolder.add(this.main.gameCamera.test, "y").step(0.001).onChange(() => this.main.gameCamera.updateTest())
+        cameraDistanceFolder.add(this.main.gameCamera.test, "z").step(0.001).onChange(() => this.main.gameCamera.updateTest())
+        cameraDistanceFolder.add(this.main.gameCamera.test, "xr").step(0.001).name("xRot").onChange(() => this.main.gameCamera.updateTest())
+        cameraDistanceFolder.add(this.main.gameCamera.test, "yr").step(0.001).name("yRot").onChange(() => this.main.gameCamera.updateTest())
+        cameraDistanceFolder.add(this.main.gameCamera.test, "zr").step(0.001).name("zRot").onChange(() => this.main.gameCamera.updateTest())
+        cameraDistanceFolder.add(this.main.gameCamera.test, "fov").step(0.001).name("fov").onChange(() => this.main.gameCamera.updateTest())
     }
 
     updateDebugBars() {

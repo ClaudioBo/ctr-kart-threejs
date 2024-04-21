@@ -114,7 +114,7 @@ export default class Main {
     }
 
     setupClock() {
-        // Create clock
+        // Create clock 
         this.clock = new THREE.Clock();
         this.clock.start()
     }
