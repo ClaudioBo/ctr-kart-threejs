@@ -7,8 +7,6 @@ export default class DebugManager {
 
     updateDebugText() {
         const lines = [
-            `isSoundEnabled (S): ${this.main.isSoundEnabled}`,
-            ``,
             `currentSpeed: ${this.main.mainKart.currentSpeed}`,
             `targetSpeed: ${this.main.mainKart.targetSpeed}`,
             ``,
@@ -16,8 +14,9 @@ export default class DebugManager {
             `currentReserves: ${this.main.mainKart.currentReserves}`,
             `turboVisibilityTime: 0.0`,
             ``,
-            `isClose (A): ${this.main.gameCamera.isClose}`,
-            `isMirror (D): ${this.main.gameCamera.isMirror}`,
+            `isSoundEnabled (S): ${this.main.isSoundEnabled}`,
+            `isClose (Q): ${this.main.gameCamera.isClose}`,
+            `isMirror (E): ${this.main.gameCamera.isMirror}`,
             `isAccelerating (X): ${this.main.mainKart.isAccelerating}`,
             // `currentSlideCharge: ${currentSlideCharge}`,
             // `currentReserves: ${currentReserves}`,
@@ -28,20 +27,19 @@ export default class DebugManager {
     }
 
     handleKeyDown(key) {
-        if(key == "p") {
+        if (key == "p") {
             document.getElementById("overlayImage").hidden = !document.getElementById("overlayImage").hidden
         }
     }
 
-    addToGUI(){
+    addToGUI() {
         const kartFolder = this.main.gui.addFolder("Kart")
-        const step = 0.01
-        kartFolder.add(this.main.mainKart.position, "x").step(step)
-        kartFolder.add(this.main.mainKart.position, "y").step(step)
-        kartFolder.add(this.main.mainKart.position, "z").step(step)
-        kartFolder.add(this.main.mainKart.rotation, "x").name("xRot").step(0.0001)
-        kartFolder.add(this.main.mainKart.rotation, "y").name("yRot").step(0.0001)
-        kartFolder.add(this.main.mainKart.rotation, "z").name("zRot").step(0.0001)
+        kartFolder.add(this.main.mainKart.position, "x").step(0.001)
+        kartFolder.add(this.main.mainKart.position, "y").step(0.001)
+        kartFolder.add(this.main.mainKart.position, "z").step(0.001)
+        kartFolder.add(this.main.mainKart.rotation, "x").step(0.001).name("xRot")
+        kartFolder.add(this.main.mainKart.rotation, "y").step(0.001).name("yRot")
+        kartFolder.add(this.main.mainKart.rotation, "z").step(0.001).name("zRot")
     }
 
     updateDebugBars() {

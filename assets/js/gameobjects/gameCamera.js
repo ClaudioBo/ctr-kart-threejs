@@ -61,12 +61,12 @@ export default class GameCamera extends THREE.PerspectiveCamera {
     }
 
     handleKeyDown(key) {
-        if (key === "a") this.isClose = !this.isClose
-        if (key === "d") this.isMirror = true
+        if (key === "q") this.isClose = !this.isClose
+        if (key === "e") this.isMirror = true
     }
 
     handleKeyUp(key) {
-        if (key === "d") this.isMirror = false
+        if (key === "e") this.isMirror = false
     }
 
 }
