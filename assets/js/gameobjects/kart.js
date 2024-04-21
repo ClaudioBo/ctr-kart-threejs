@@ -108,13 +108,16 @@ export default class Kart extends THREE.Group {
         const heightRatio = kartShadowTextureCloned.source.data.height / kartShadowTextureCloned.source.data.width
 
         const shadowPlaneGeometry = new THREE.PlaneGeometry(widthRatio, heightRatio)
-        const shadowPlaneMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, map: kartShadowTextureCloned });
+        const shadowPlaneMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, map: kartShadowTextureCloned });
+        shadowPlaneMaterial.color = new THREE.Color(0x808080) // This color is a work-around for opacity for SubtractiveBlending
         shadowPlaneMaterial.blending = THREE.SubtractiveBlending
+
         const shadowPlane = new THREE.Mesh(shadowPlaneGeometry, shadowPlaneMaterial)
         shadowPlane.position.y = 0.01
         shadowPlane.position.z = 0.15
         shadowPlane.rotation.x = Math.PI / 2
         shadowPlane.scale.set(widthRatio * 2.5, heightRatio * 1.5)
+
         this.add(shadowPlane)
     }
 
