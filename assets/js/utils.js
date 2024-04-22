@@ -66,7 +66,7 @@ export async function loadModel(materialPath, objectPath, shouldMultiplyVertexCo
                     child.material.forEach(material => materialCallback(material));
                 }
                 if (child.geometry?.attributes && shouldMultiplyVertexColors) {
-                    child.geometry.attributes.color.array = child.geometry.attributes.color.array.map(color => color * 4)
+                    child.geometry.attributes.color.array = child.geometry.attributes.color.array.map(color => color * 6.4) // Multiplied by 6.4 to match HEX color from emulation
                 }
             }
         });
