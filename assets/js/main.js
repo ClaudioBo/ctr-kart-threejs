@@ -1,27 +1,32 @@
 // Libraries
 import * as THREE from 'three';
+
 import GUI from 'lil-gui';
 import Stats from 'three/addons/libs/stats.module.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// Utils
+import { CustomTimer, loadRAPIER } from './utils.js';
+import RapierDebugRenderer from './rapierDebug.js'
 
 // Managers
 import AssetsManager from './managers/assetsManager.js';
 import DebugManager from './managers/debugManager.js';
 
 // Game Objects
-import Kart from './gameobjects/kart.js';
-import DefaultScene from './scene/default.js';
-import SlideColiseumScene from './scene/slideColiseum.js';
 import GameCamera from './gameobjects/gameCamera.js';
+import Kart from './gameobjects/kart.js';
+import SlideColiseumScene from './scene/slideColiseum.js';
 
 export default class Main {
     constructor() {
         // Basic
         this.renderer;
+        this.rapier
         this.stats;
         this.scene;
-        this.clock;
+        this.timer;
         this.gui;
+        this.rapierDebugRenderer
 
         // Managers
         this.assetsManager;
@@ -37,6 +42,7 @@ export default class Main {
     }
 
     async initialize() {
+        await this.setupRapier()
         this.setupBasic()
         this.setupGUI()
         await this.setupManagers()
@@ -44,13 +50,20 @@ export default class Main {
         this.registerListeners()
         this.addGameObjects()
         this.debugManager.addToGUI()
+
+        this.rapierDebugRenderer = new RapierDebugRenderer(this.scene, this.scene.world)
+
         this.loop()
+    }
+
+    async setupRapier() {
+        this.rapier = await loadRAPIER()
     }
 
     setupBasic() {
         this.setupRenderer()
         this.setupStats()
-        this.setupClock()
+        this.setupTimer()
     }
 
     async setupManagers() {
@@ -65,11 +78,13 @@ export default class Main {
 
         // Test add Kart object
         const kart = new Kart(this)
-        this.mainKart = kart
         kart.position.add(this.scene.startPointPosition)
         kart.rotation.x = this.scene.startPointRotation.x
         kart.rotation.y = this.scene.startPointRotation.y
         kart.rotation.z = this.scene.startPointRotation.z
+        kart.initializePhysics()
+        this.mainKart = kart
+
         this.gameCamera.followPlayer(this.mainKart)
         this.gameObjects.push(kart)
         this.scene.add(kart)
@@ -77,19 +92,19 @@ export default class Main {
 
     loop() {
         // Tiempo delta
-        const deltaTime = this.clock.getDelta()
+        this.timer.update()
+        let deltaTime = this.timer.getDelta()
 
-        // Actualizar logica
-        this.stats.update();
+        // Actualizar fisicas
+        this.scene.world.step()
 
         // Actualizar logica de GameObjects
         this.gameObjects.forEach(obj => obj.update(deltaTime))
         this.gameCamera.update(deltaTime)
 
-        // Actualizar dibujos
-        // ...
-
         // Renderizado y loopeo
+        this.rapierDebugRenderer.update()
+        this.stats.update();
         this.debugManager.update()
         this.renderer.render(this.scene, this.gameCamera);
         requestAnimationFrame(() => this.loop());
@@ -113,10 +128,9 @@ export default class Main {
         document.body.appendChild(this.stats.dom);
     }
 
-    setupClock() {
-        // Create clock 
-        this.clock = new THREE.Clock();
-        this.clock.start()
+    setupTimer() {
+        // Create timer
+        this.timer = new CustomTimer();
     }
 
     setupScene() {
@@ -132,7 +146,7 @@ export default class Main {
     }
 
     setupGameCamera() {
-        this.gameCamera = new GameCamera(this, 90, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.gameCamera = new GameCamera(this, 70, window.innerWidth / window.innerHeight, 0.1, 1000);
     }
 
     setupGUI() {
@@ -153,7 +167,7 @@ export default class Main {
         this.gameCamera.handleKeyDown(keyPressed)
         if (keyPressed == "s") this.isSoundEnabled = !this.isSoundEnabled
     }
-    
+
     onKeyUp(event) {
         const keyReleased = event.key.toLowerCase()
         this.mainKart.handleKeyUp(keyReleased)

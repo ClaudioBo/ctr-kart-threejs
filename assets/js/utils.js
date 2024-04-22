@@ -1,7 +1,14 @@
 import * as THREE from 'three';
+import RAPIER from '@dimforge/rapier3d';
+
 import { Timer } from 'three/addons/misc/Timer.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+
+// Load RAPIER
+export function loadRAPIER() {
+    return import('@dimforge/rapier3d').then(module => module.default);
+}
 
 // Function to set sprite frame, mirroring and rotation
 export function setSpriteFrame(sprite, spritesheetProperties, frameIndex, mirror = false, rotationDegree = 0) {
@@ -95,6 +102,43 @@ export function scaleValue(currentValue, scaleMax, originalMax) {
 // Helper function to make a value close to a step value
 export function closestStepValue(value, step) {
     return Math.round(value / step) * step
+}
+
+// Helper function to retrieve geometry points to be used for Convex Hull
+export function getGeometryPoints(object3d) {
+    let vertices = null
+    let indexes = null
+
+    object3d.traverse((o) => {
+        if (o.isMesh) {
+            vertices = o.geometry.attributes.position.array;
+            if (!indexes) {
+                generateIndexes(o.geometry)
+            }
+            indexes = o.geometry.index.array;
+        }
+    });
+
+    return { vertices: new Float32Array(vertices), indexes: new Uint32Array(indexes) };
+}
+
+export function generateIndexes(geometry) {
+    const indices = [];
+    for (let i = 0; i < geometry.attributes.position.count; i += 3) {
+        indices.push(i, i + 1, i + 2);
+    }
+
+    const indicesTypedArray = new Uint16Array(indices);
+    const indexAttribute = new THREE.BufferAttribute(indicesTypedArray, 1);
+    geometry.setIndex(indexAttribute);
+}
+
+export function addGeometryToPhysics(world, rigidbodyDesc, object3d) {
+    const rigidBody = world.createRigidBody(rigidbodyDesc)
+    const { vertices, indexes } = getGeometryPoints(object3d)
+    const shape = RAPIER.ColliderDesc.trimesh(vertices, indexes)
+    world.createCollider(shape, rigidBody)
+    return rigidBody
 }
 
 // CustomTimer class

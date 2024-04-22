@@ -6,6 +6,7 @@ import TurboExhaust from './turboExhaust.js';
 
 import { degToRad, randInt } from 'three/src/math/MathUtils.js';
 import { CustomTimer } from '../utils.js';
+import RAPIER from '@dimforge/rapier3d';
 
 export default class Kart extends THREE.Group {
     constructor(main) {
@@ -63,6 +64,9 @@ export default class Kart extends THREE.Group {
         this.isBoostPressed = false
         this.steerDirection = this.DIRECTION_ENUMS.NONE
 
+        // Physics
+        this.rigidBody = undefined
+
         // Runtime
         this.currentModelRotation = 0
         this.targetModelRotation = 0
@@ -85,6 +89,22 @@ export default class Kart extends THREE.Group {
         this.addTurboExhaust()
         this.addShadowPlane()
         this.addSoundEmitters()
+    }
+
+    initializePhysics() {
+        const rbDesc = RAPIER.RigidBodyDesc.dynamic()
+            .setLinearDamping(0.1)
+            .setCcdEnabled(true)
+            .setTranslation(this.position.x, this.position.y, this.position.z)
+            .setRotation({ x: this.quaternion.x, y: this.quaternion.y, z: this.quaternion.z, w: this.quaternion.w })
+        this.rigidBody = this.main.scene.world.createRigidBody(rbDesc)
+
+        const clDesc = RAPIER.ColliderDesc.ball(1)
+            .setFriction(0.1)
+            .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Max)
+            .setRestitution(0.6)
+            .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Max);
+        this.main.scene.world.createCollider(clDesc, this.rigidBody)
     }
 
     addKartModel() {
@@ -287,7 +307,7 @@ export default class Kart extends THREE.Group {
     }
 
     doModelRotation(deltaTime) {
-        const currentSteerDirection = this.isAccelerationPressed ? this.steerDirection : 0; //-1, 0, or 1 if accelerating
+        const currentSteerDirection = this.isAccelerationPressed ? this.steerDirection : 0;
         const rotationRate = (this.KART_PROPERTIES.MODEL_ROTATION_TURNING_ANGLE / this.KART_PROPERTIES.MODEL_ROTATION_TURNING_TIME);
         this.targetModelRotation = currentSteerDirection !== 0 ? currentSteerDirection * this.KART_PROPERTIES.MODEL_ROTATION_TURNING_ANGLE : 0
 
@@ -319,8 +339,17 @@ export default class Kart extends THREE.Group {
         this.getShadow().rotation.z = -newRotationValue;
     }
 
+    copyPhysicsToObject3D() {
+        const bodyTranslation = this.rigidBody.translation()
+        const bodyRotation = this.rigidBody.rotation()
+        this.position.set(bodyTranslation.x, bodyTranslation.y, bodyTranslation.z)
+        this.quaternion.set(bodyRotation.x, bodyRotation.y, bodyRotation.z, bodyRotation.w)
+    }
 
     update(deltaTime) {
+        // Copy from Physics
+        this.copyPhysicsToObject3D()
+
         // Tires
         this.getTires().update(deltaTime)
 
