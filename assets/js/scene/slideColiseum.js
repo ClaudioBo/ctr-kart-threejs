@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import RAPIER from '@dimforge/rapier3d';
+import * as RAPIER from '@dimforge/rapier3d-compat';
 
 import { addGeometryToPhysics } from '../utils.js';
 

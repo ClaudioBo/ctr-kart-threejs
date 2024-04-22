@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import RAPIER from '@dimforge/rapier3d';
+import * as RAPIER from '@dimforge/rapier3d-compat';
 
 import { Timer } from 'three/addons/misc/Timer.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';

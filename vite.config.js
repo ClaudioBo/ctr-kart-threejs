@@ -13,5 +13,13 @@ export default defineConfig({
             wasm(),
             topLevelAwait()
         ]
+    },
+    build: {
+        minify: false,
+    },
+    rollupOptions: {
+        external: [
+            "@dimforge/rapier3d-compat",
+        ],
     }
 })
