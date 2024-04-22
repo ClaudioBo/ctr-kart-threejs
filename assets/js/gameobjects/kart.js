@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import RAPIER from '@dimforge/rapier3d';
 
 import Smoke from './smoke.js';
 import Tires from './tires.js';
@@ -91,18 +92,18 @@ export default class Kart extends THREE.Group {
     }
 
     initializePhysics() {
-        const rbDesc = this.main.rapier.RigidBodyDesc.dynamic()
+        const rbDesc = RAPIER.RigidBodyDesc.dynamic()
             .setLinearDamping(0.1)
             .setCcdEnabled(true)
             .setTranslation(this.position.x, this.position.y, this.position.z)
             .setRotation({ x: this.quaternion.x, y: this.quaternion.y, z: this.quaternion.z, w: this.quaternion.w })
         this.rigidBody = this.main.scene.world.createRigidBody(rbDesc)
 
-        const clDesc = this.main.rapier.ColliderDesc.ball(1)
+        const clDesc = RAPIER.ColliderDesc.ball(1)
             .setFriction(0.1)
-            .setFrictionCombineRule(this.main.rapier.CoefficientCombineRule.Max)
+            .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Max)
             .setRestitution(0.6)
-            .setRestitutionCombineRule(this.main.rapier.CoefficientCombineRule.Max);
+            .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Max);
         this.main.scene.world.createCollider(clDesc, this.rigidBody)
     }
 

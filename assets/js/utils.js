@@ -1,13 +1,14 @@
 import * as THREE from 'three';
+import RAPIER from '@dimforge/rapier3d';
 
 import { Timer } from 'three/addons/misc/Timer.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
 // Load RAPIER
-export function loadRAPIER() {
-    return import('@dimforge/rapier3d').then(module => module.default);
-}
+// export function loadRAPIER() {
+//     return import('@dimforge/rapier3d').then(module => module.default);
+// }
 
 // Function to set sprite frame, mirroring and rotation
 export function setSpriteFrame(sprite, spritesheetProperties, frameIndex, mirror = false, rotationDegree = 0) {
@@ -132,10 +133,10 @@ export function generateIndexes(geometry) {
     geometry.setIndex(indexAttribute);
 }
 
-export function addGeometryToPhysics(rapier, world, rigidbodyDesc, object3d) {
+export function addGeometryToPhysics(world, rigidbodyDesc, object3d) {
     const rigidBody = world.createRigidBody(rigidbodyDesc)
     const { vertices, indexes } = getGeometryPoints(object3d)
-    const shape = rapier.ColliderDesc.trimesh(vertices, indexes)
+    const shape = RAPIER.ColliderDesc.trimesh(vertices, indexes)
     world.createCollider(shape, rigidBody)
     return rigidBody
 }

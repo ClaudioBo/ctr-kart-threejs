@@ -1,12 +1,13 @@
 // Libraries
+import RAPIER from '@dimforge/rapier3d-compat';
 import * as THREE from 'three';
 
 import GUI from 'lil-gui';
 import Stats from 'three/addons/libs/stats.module.js';
 
 // Utils
-import { CustomTimer, loadRAPIER } from './utils.js';
-import RapierDebugRenderer from './rapierDebug.js'
+import RapierDebugRenderer from './rapierDebug.js';
+import { CustomTimer } from './utils.js';
 
 // Managers
 import AssetsManager from './managers/assetsManager.js';
@@ -18,10 +19,10 @@ import Kart from './gameobjects/kart.js';
 import SlideColiseumScene from './scene/slideColiseum.js';
 
 export default class Main {
-    constructor(rapierModule) {
+    constructor() {
         // Basic
         this.renderer;
-        this.rapier = rapierModule
+        this.rapier
         this.stats;
         this.scene;
         this.timer;
@@ -58,7 +59,6 @@ export default class Main {
 
     async setupRapier() {
         // this.rapier = await loadRAPIER()
-        console.log(this.rapier)
     }
 
     setupBasic() {
@@ -176,6 +176,5 @@ export default class Main {
     }
 }
 
-import('@dimforge/rapier3d').then(rapierModule => {
-    new Main(rapierModule).initialize()
-})
+await RAPIER.init()
+new Main().initialize()

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import RAPIER from '@dimforge/rapier3d';
+
 import { addGeometryToPhysics } from '../utils.js';
 
 export default class SlideColiseumScene extends THREE.Scene {
@@ -27,7 +29,7 @@ export default class SlideColiseumScene extends THREE.Scene {
     }
 
     initializePhysics() {
-        this.world = new this.main.rapier.World({ x: 0.0, y: -9.81, z: 0.0 })
+        this.world = new RAPIER.World({ x: 0.0, y: -9.81, z: 0.0 })
     }
 
     addTrackModel() {
@@ -38,9 +40,9 @@ export default class SlideColiseumScene extends THREE.Scene {
         const trackWalls = this.main.assetsManager.trackAssets.trackWalls.clone()
         const trackDirt = this.main.assetsManager.trackAssets.trackDirt.clone()
 
-        this.groundRigidBody = addGeometryToPhysics(this.main.rapier, this.world, this.main.rapier.RigidBodyDesc.fixed(), trackGround)
-        this.wallsRigidBody = addGeometryToPhysics(this.main.rapier, this.world, this.main.rapier.RigidBodyDesc.fixed(), trackWalls)
-        this.dirtRigidBody = addGeometryToPhysics(this.main.rapier, this.world, this.main.rapier.RigidBodyDesc.fixed(), trackDirt)
+        this.groundRigidBody = addGeometryToPhysics(this.world, RAPIER.RigidBodyDesc.fixed(), trackGround)
+        this.wallsRigidBody = addGeometryToPhysics(this.world, RAPIER.RigidBodyDesc.fixed(), trackWalls)
+        this.dirtRigidBody = addGeometryToPhysics(this.world, RAPIER.RigidBodyDesc.fixed(), trackDirt)
     }
 
     addTrackSky() {
