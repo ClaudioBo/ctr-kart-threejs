@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { setSpriteFrame, closestStepValue } from '../utils.js'
+import { degToRad } from 'three/src/math/MathUtils.js';
 
+import { setSpriteFrame, closestStepValue } from '../utils.js'
 import { CustomTimer } from '../utils.js';
 
 export default class Tires extends THREE.Group {
@@ -20,6 +21,9 @@ export default class Tires extends THREE.Group {
         this.TIRE_FRAME_CHANGE_RATE = 3;
         this.TIRE_FRAME1_COLOR = new THREE.Color(0xffffff);
         this.TIRE_FRAME2_COLOR = new THREE.Color(0xbfbfbf);
+        this.TIRE_FRONT_ROTATION_RATE = 12;
+        this.TIRE_FRONT_ROTATION_INTERVAL = 0.133; // 3 frames / 30fps
+        this.TIRE_FRONT_ROTATION_MAX_ANGLE = 32;
 
         this.SPRITESHEET_PROPERTIES = {
             totalFrames: 17,
@@ -31,6 +35,10 @@ export default class Tires extends THREE.Group {
 
         // Timers
         this.tireColorTimer = new CustomTimer()
+
+        // Runtime
+        this.currentFrontTireRotation = 0
+        this.targetFrontTireRotation = 0
 
         this.initialize()
     }
@@ -45,15 +53,15 @@ export default class Tires extends THREE.Group {
 
     initialize() {
         const positions = [
-            new THREE.Vector3(-this.TIRE_POSITION_OFFSET_BACK_X, this.TIRE_POSITION_OFFSET_Y, -this.TIRE_POSITION_OFFSET_BACK_Z,), // Back right
+            new THREE.Vector3(this.TIRE_POSITION_OFFSET_FRONT_X, this.TIRE_POSITION_OFFSET_Y, this.TIRE_POSITION_OFFSET_FRONT_Z,), // Front left
             new THREE.Vector3(-this.TIRE_POSITION_OFFSET_FRONT_X, this.TIRE_POSITION_OFFSET_Y, this.TIRE_POSITION_OFFSET_FRONT_Z,), // Front right
             new THREE.Vector3(this.TIRE_POSITION_OFFSET_BACK_X, this.TIRE_POSITION_OFFSET_Y, -this.TIRE_POSITION_OFFSET_BACK_Z,), // Back left
-            new THREE.Vector3(this.TIRE_POSITION_OFFSET_FRONT_X, this.TIRE_POSITION_OFFSET_Y, this.TIRE_POSITION_OFFSET_FRONT_Z,), // Front left
+            new THREE.Vector3(-this.TIRE_POSITION_OFFSET_BACK_X, this.TIRE_POSITION_OFFSET_Y, -this.TIRE_POSITION_OFFSET_BACK_Z,), // Back right
         ];
         for (let i = 0; i < 4; i++) {
             const tireNew = this.createTire()
+            tireNew.name = `wheel${i}`
             tireNew.position.copy(positions[i])
-            tireNew.name = `Wheel #${i}`
             this.add(tireNew)
         }
     }
@@ -148,7 +156,25 @@ export default class Tires extends THREE.Group {
         this.children.forEach(sprite => this.changeTireSpriteBasedOnCamera(sprite, this.main.gameCamera))
     }
 
-    update() {
+    doFrontTireRotation(deltaTime) {
+        const currentSteerDirection = this.kart.steerDirection;
+        const rotationRate = this.TIRE_FRONT_ROTATION_RATE * deltaTime;
+        this.targetFrontTireRotation = currentSteerDirection !== 0 ? currentSteerDirection * this.TIRE_FRONT_ROTATION_MAX_ANGLE : -this.currentFrontTireRotation;
+        this.currentFrontTireRotation += this.targetFrontTireRotation * rotationRate;
+
+        if (currentSteerDirection === 0 && Math.abs(this.currentFrontTireRotation) > 0) {
+            const decreaseAmount = deltaTime * this.TIRE_FRONT_ROTATION_MAX_ANGLE;
+            this.currentFrontTireRotation += this.currentFrontTireRotation > 0 ? -decreaseAmount : decreaseAmount;
+        }
+
+        this.currentFrontTireRotation = Math.min(Math.max(this.currentFrontTireRotation, -this.TIRE_FRONT_ROTATION_MAX_ANGLE), this.TIRE_FRONT_ROTATION_MAX_ANGLE);
+        const newRotationValue = -degToRad(this.currentFrontTireRotation);
+        this.children[0].rotation.y = newRotationValue;
+        this.children[1].rotation.y = newRotationValue;
+    }
+
+    update(deltaTime) {
+        this.doFrontTireRotation(deltaTime)
         this.updateKartTireFrames()
         this.doTireColorChange()
     }

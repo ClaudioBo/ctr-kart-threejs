@@ -78,25 +78,23 @@ https://www.claudiobo.com/ctr-kart-threejs
 -   [x] Implement Smoke with togglable darkness and toggable visibility
 -   [x] Implement Turbo animation
 -   [x] Find a way to render the ctr models correctly without maxing heavily out the ambient light intensity &mdash; solution was multiplying all vertex colors by 4
+-   [ ] Implement basic physics
+    -   [x] Add `ground/dirt` model
+    -   [x] Add `wall` model
+    -   [ ] Make kart move
+    -   [ ] Make kart jump
+    -   [ ] Try to imitate original game by getting RAM values and constants
 -   [ ] Implement some sort of basic speed, and acceleration just to be able to implement the next list of TO-DO chores
     -   [x] Implement Tire's color palette modification to simulate forward motion
     -   [x] Implement Kart sounds
     -   [ ] Implement Turbo different scales depending on the 3 consecutive turbos
--   [ ] Implement basic physics
-    -   [ ] Add `ground` model
-    -   [ ] Add `wall` model
-    -   [ ] Make kart move
-    -   [ ] Make kart jump
-    -   [ ] Try to imitate original game by getting RAM values and constants
 -   [ ] Implement skid effect
 -   [x] Make camera follow player
 -   [ ] Make camera distance dynamic
 -   [x] Make camera toggle between close and far distance mode
 -   [x] Make camera toggle reverse mirror mode
--   [ ] Implement model rotation by imitating the game by playing with some RAM values
-    -   Freeze ram address 0x######
-    -   Freeze ram address 0x######
-    -   Freeze ram address 0x######
+-   [x] Implement model rotation when accelerating
+-   [x] Implement front tire rotation when steering
 -   [ ] Implement sliding mechanics
 -   [ ] Implement reserves
 -   [ ] Implement fire level

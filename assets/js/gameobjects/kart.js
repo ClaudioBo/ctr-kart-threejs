@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 
-import Tires from './tires.js';
 import Smoke from './smoke.js';
+import Tires from './tires.js';
 import TurboExhaust from './turboExhaust.js';
 
+import { degToRad, randInt } from 'three/src/math/MathUtils.js';
 import { CustomTimer } from '../utils.js';
-import { randInt } from 'three/src/math/MathUtils.js';
 
 export default class Kart extends THREE.Group {
     constructor(main) {
@@ -15,7 +15,9 @@ export default class Kart extends THREE.Group {
         // Constants
         this.KART_PROPERTIES = {
             VERTICAL_ROTATION_EXHAUST_OFFSET: 3.75,
-            SMOKE_SPAWN_INTERVAL: 0.03 // Spawns each frame (1 / 30fps = 0.0333333333333333)
+            SMOKE_SPAWN_INTERVAL: 0.03, // Spawns each frame (1 / 30fps = 0.0333333333333333)
+            MODEL_ROTATION_TURNING_TIME: 0.5, // (15frames/30fps)
+            MODEL_ROTATION_TURNING_ANGLE: 30 // When drifting, its multiplied by 2
         }
         this.PHYSICS_PROPERTIES = {
             JUMP_COOLDOWN: 352, //0x3f2 (24)
@@ -38,6 +40,11 @@ export default class Kart extends THREE.Group {
             DETUNE_START: -1100,
             DETUNE_MODIFIER: 0.12
         }
+        this.DIRECTION_ENUMS = {
+            LEFT: -1,
+            NONE: 0,
+            RIGHT: 1
+        }
 
         // Timers
         this.smokeSpawnTimer = new CustomTimer()
@@ -48,10 +55,19 @@ export default class Kart extends THREE.Group {
         this.isSmokeDark = false
         this.isTurboVisible = true
 
+        // Keys pressed
+        this.isAccelerationPressed = false
+        this.isBrakePressed = false
+        this.isReversingPressed = false
+        this.isJumpingPressed = false
+        this.isBoostPressed = false
+        this.steerDirection = this.DIRECTION_ENUMS.NONE
+
         // Runtime
+        this.currentModelRotation = 0
+        this.targetModelRotation = 0
         this.currentSmokes = []
         this.currentDetune = 0
-        this.isAccelerating = false
         this.currentSpeed = 0
         this.targetSpeed = 0 // 0x39C, this is the max speed that it tries to reach
         this.currentSlideCharge = 0
@@ -64,7 +80,6 @@ export default class Kart extends THREE.Group {
     }
 
     initialize() {
-        this.calculateExhaustMarkers()
         this.addKartModel()
         this.addKartTires()
         this.addTurboExhaust()
@@ -72,7 +87,12 @@ export default class Kart extends THREE.Group {
         this.addSoundEmitters()
     }
 
-    calculateExhaustMarkers() {
+    addKartModel() {
+        const kartModelCloned = this.main.assetsManager.kartAssets.kartModel.clone()
+        kartModelCloned.name = "kartModel"
+        this.add(kartModelCloned)
+
+        // Calculate exhausts and add to Kart
         const leftExhaustMarker = new THREE.Object3D();
         const rightExhaustMarker = new THREE.Object3D();
         leftExhaustMarker.name = "leftExhaustMarker"
@@ -81,14 +101,8 @@ export default class Kart extends THREE.Group {
         rightExhaustMarker.position.set(-0.2835, 0.715, -0.783)
         leftExhaustMarker.rotation.x = this.KART_PROPERTIES.VERTICAL_ROTATION_EXHAUST_OFFSET
         rightExhaustMarker.rotation.x = this.KART_PROPERTIES.VERTICAL_ROTATION_EXHAUST_OFFSET
-        this.add(leftExhaustMarker)
-        this.add(rightExhaustMarker)
-    }
-
-    addKartModel() {
-        const kartModelCloned = this.main.assetsManager.kartAssets.kartModel.clone()
-        kartModelCloned.name = "kartModel"
-        this.add(kartModelCloned)
+        kartModelCloned.add(leftExhaustMarker)
+        kartModelCloned.add(rightExhaustMarker)
     }
 
     addKartTires() {
@@ -117,6 +131,7 @@ export default class Kart extends THREE.Group {
         shadowPlane.position.z = 0.15
         shadowPlane.rotation.x = Math.PI / 2
         shadowPlane.scale.set(widthRatio * 2.5, heightRatio * 1.5)
+        shadowPlane.name = "shadow"
 
         this.add(shadowPlane)
     }
@@ -169,8 +184,16 @@ export default class Kart extends THREE.Group {
         return this.getObjectByName("kartModel")
     }
 
+    getTires() {
+        return this.getObjectByName("tires")
+    }
+
     getTurboExhaust() {
         return this.getObjectByName("turboExhausts")
+    }
+
+    getShadow() {
+        return this.getObjectByName("shadow")
     }
 
     doSmokeSpawning() {
@@ -225,18 +248,22 @@ export default class Kart extends THREE.Group {
     }
 
     handleKeyDown(key) {
-        if (key === "x") this.isAccelerating = true
+        if (key === "x") this.isAccelerationPressed = true
+        if (key === "arrowleft") this.steerDirection = this.DIRECTION_ENUMS.LEFT
+        if (key === "arrowright") this.steerDirection = this.DIRECTION_ENUMS.RIGHT
     }
 
     handleKeyUp(key) {
-        if (key === "x") this.isAccelerating = false
+        if (key === "x") this.isAccelerationPressed = false;
+        if (key === "arrowleft" && this.steerDirection === this.DIRECTION_ENUMS.LEFT) this.steerDirection = this.DIRECTION_ENUMS.NONE;
+        if (key === "arrowright" && this.steerDirection === this.DIRECTION_ENUMS.RIGHT) this.steerDirection = this.DIRECTION_ENUMS.NONE;
     }
 
     doSpeedLogic(deltaTime) {
         // Calculate equivalent acceleration and deceleration based on the acceleration increment interval
         const equivalentAcceleration = this.ACCELERATION_PROPERTIES.ACCELERATION / this.ACCELERATION_PROPERTIES.ACCELERATION_INCREMENT_INTERVAL;
         const equivalentDeceleration = this.ACCELERATION_PROPERTIES.DECELERATION / this.ACCELERATION_PROPERTIES.ACCELERATION_INCREMENT_INTERVAL;
-        const acceleration = this.isAccelerating ? equivalentAcceleration : -equivalentDeceleration;
+        const acceleration = this.isAccelerationPressed ? equivalentAcceleration : -equivalentDeceleration;
 
         // Calculate the change in speed based on acceleration and deltaTime
         const speedChange = acceleration * deltaTime;
@@ -259,9 +286,43 @@ export default class Kart extends THREE.Group {
         kartEngineEmitter.setDetune(this.currentDetune)
     }
 
+    doModelRotation(deltaTime) {
+        const currentSteerDirection = this.isAccelerationPressed ? this.steerDirection : 0; //-1, 0, or 1 if accelerating
+        const rotationRate = (this.KART_PROPERTIES.MODEL_ROTATION_TURNING_ANGLE / this.KART_PROPERTIES.MODEL_ROTATION_TURNING_TIME);
+        this.targetModelRotation = currentSteerDirection !== 0 ? currentSteerDirection * this.KART_PROPERTIES.MODEL_ROTATION_TURNING_ANGLE : 0
+
+        // Calculate scaling factor based on difference between current and target rotations
+        // This is to rotate quicker if player changes their steering direction
+        const rotationDifference = Math.abs(this.targetModelRotation - this.currentModelRotation);
+        const scalingFactor = 1 + (rotationDifference / this.KART_PROPERTIES.MODEL_ROTATION_TURNING_ANGLE);
+
+        // Update current rotation gradually towards the target, with scaled rotation rate
+        const maxRotationChange = rotationRate * deltaTime * scalingFactor;
+        const rotationDiff = this.targetModelRotation - this.currentModelRotation;
+        this.currentModelRotation += Math.sign(rotationDiff) * Math.min(Math.abs(rotationDiff), maxRotationChange);
+
+        // Clamp the value
+        this.currentModelRotation = Math.min(Math.max(this.currentModelRotation, -this.KART_PROPERTIES.MODEL_ROTATION_TURNING_ANGLE), this.KART_PROPERTIES.MODEL_ROTATION_TURNING_ANGLE);
+
+        // Decrease rotation when idle
+        if (currentSteerDirection === 0) {
+            const decreateRatio = 0.25
+            const decreaseAmount = rotationRate * deltaTime * decreateRatio;
+            this.currentModelRotation += Math.sign(this.currentModelRotation) * Math.min(Math.abs(this.currentModelRotation), decreaseAmount);
+        }
+
+        // Set new rotations
+        const newRotationValue = -degToRad(this.currentModelRotation);
+        this.getKartModel().rotation.y = newRotationValue;
+        this.getTires().rotation.y = newRotationValue;
+        this.getTurboExhaust().rotation.y = newRotationValue;
+        this.getShadow().rotation.z = -newRotationValue;
+    }
+
+
     update(deltaTime) {
         // Tires
-        this.getObjectByName("tires").update()
+        this.getTires().update(deltaTime)
 
         // Turbo exhaust
         if (this.isTurboVisible) this.getObjectByName("turboExhausts").update()
@@ -272,6 +333,9 @@ export default class Kart extends THREE.Group {
 
         // Speed logic
         this.doSpeedLogic(deltaTime)
+
+        // Model rotation depending on speed
+        this.doModelRotation(deltaTime)
 
         // Sound
         this.doKartSound()
