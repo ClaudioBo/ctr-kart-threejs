@@ -34,7 +34,7 @@ export function setSpriteFrame(sprite, spritesheetProperties, frameIndex, mirror
     }
 }
 
-export async function loadModel(materialPath, objectPath, shouldMultiplyVertexColors = false, materialCallback = undefined) {
+export async function loadModel(materialPath, objectPath, multiplyVertexColorsMode = 0, materialCallback = undefined) {
     // Initialize loaders
     const mtlLoader = new MTLLoader();
     const objLoader = new OBJLoader();
@@ -65,8 +65,11 @@ export async function loadModel(materialPath, objectPath, shouldMultiplyVertexCo
                 if (Array.isArray(child.material)) {
                     child.material.forEach(material => materialCallback(material));
                 }
-                if (child.geometry?.attributes && shouldMultiplyVertexColors) {
-                    child.geometry.attributes.color.array = child.geometry.attributes.color.array.map(color => color * 6.4) // Multiplied by 6.4 to match HEX color from emulation
+                if (child.geometry?.attributes && multiplyVertexColorsMode) {
+                    // multiplyVertexColorsMode = 1: Multiply by 1.6
+                    // multiplyVertexColorsMode = 2: Multiply by 6.4
+                    const multiplyBy = multiplyVertexColorsMode == 1 ? 1.6 : 6.4
+                    child.geometry.attributes.color.array = child.geometry.attributes.color.array.map(color => color * multiplyBy) // Multiplied by 6.4 to match HEX color from emulation
                 }
             }
         });

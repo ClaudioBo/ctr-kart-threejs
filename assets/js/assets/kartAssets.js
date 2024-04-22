@@ -49,7 +49,7 @@ export default class KartAssets {
         const materialPath = 'assets/models/crash/crash.mtl'
         const objectPath = 'assets/models/crash/crash.obj'
 
-        this.kartModel = await loadModel(materialPath, objectPath, true, material => {
+        this.kartModel = await loadModel(materialPath, objectPath, 2, material => {
             material.vertexColors = true
             if (!!material.map) {
                 material.map.magFilter = THREE.NearestFilter;
@@ -96,7 +96,7 @@ export default class KartAssets {
         for (let i = 0; i < TURBO_FRAME_NAMES.length; i++) {
             const turboName = TURBO_FRAME_NAMES[i];
             const objectPath = `assets/models/turbo/${turboName}.obj`
-            const loadedModel = await loadModel(materialPath, objectPath, true, material => {
+            const loadedModel = await loadModel(materialPath, objectPath, 2, material => {
                 if (!!material.map) {
                     material.map.magFilter = THREE.NearestFilter;
                     material.map.minFilter = THREE.NearestFilter;

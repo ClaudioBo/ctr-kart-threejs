@@ -28,7 +28,7 @@ export default class Kart extends THREE.Group {
         this.ACCELERATION_PROPERTIES = {
             ACCELERATION: 480, // 0x428, each frame it sums to currentSpeed
             DECELERATION: 130, // checked value frame by frame
-            ACCELERATION_INCREMENT_INTERVAL: 0.03,
+            ACCELERATION_INCREMENT_INTERVAL: 0.03, // 1fps / 30fps
             // ACCELERATION_RESERVES: 1152, // 0x42A, idk
             SPEED_BASE: 13_140, // 0x42C, max speed without doing turbos
             SPEED_BASE_SINGLETURBO: 2048, // 0x430

@@ -35,7 +35,7 @@ export default class TrackAssets {
     async loadTrackSky() {
         const objectPath = 'assets/models/slideColiseum/data_sky.obj'
 
-        this.trackSky = await loadModel(null, objectPath, false, material => {
+        this.trackSky = await loadModel(null, objectPath, 1, material => {
             material.vertexColors = true
             if (!!material.map) {
                 material.map.magFilter = THREE.NearestFilter;
@@ -48,7 +48,7 @@ export default class TrackAssets {
         const materialPath = 'assets/models/slideColiseum/data_Med.mtl'
         const objectPath = 'assets/models/slideColiseum/data_Med.obj'
 
-        this.trackModel = await loadModel(materialPath, objectPath, true, material => {
+        this.trackModel = await loadModel(materialPath, objectPath, 2, material => {
             material.vertexColors = true
             if (!!material.map) {
                 material.map.magFilter = THREE.NearestFilter;
