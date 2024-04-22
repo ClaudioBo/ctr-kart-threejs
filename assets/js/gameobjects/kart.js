@@ -6,7 +6,6 @@ import TurboExhaust from './turboExhaust.js';
 
 import { degToRad, randInt } from 'three/src/math/MathUtils.js';
 import { CustomTimer } from '../utils.js';
-import RAPIER from '@dimforge/rapier3d';
 
 export default class Kart extends THREE.Group {
     constructor(main) {
@@ -92,18 +91,18 @@ export default class Kart extends THREE.Group {
     }
 
     initializePhysics() {
-        const rbDesc = RAPIER.RigidBodyDesc.dynamic()
+        const rbDesc = this.main.rapier.RigidBodyDesc.dynamic()
             .setLinearDamping(0.1)
             .setCcdEnabled(true)
             .setTranslation(this.position.x, this.position.y, this.position.z)
             .setRotation({ x: this.quaternion.x, y: this.quaternion.y, z: this.quaternion.z, w: this.quaternion.w })
         this.rigidBody = this.main.scene.world.createRigidBody(rbDesc)
 
-        const clDesc = RAPIER.ColliderDesc.ball(1)
+        const clDesc = this.main.rapier.ColliderDesc.ball(1)
             .setFriction(0.1)
-            .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Max)
+            .setFrictionCombineRule(this.main.rapier.CoefficientCombineRule.Max)
             .setRestitution(0.6)
-            .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Max);
+            .setRestitutionCombineRule(this.main.rapier.CoefficientCombineRule.Max);
         this.main.scene.world.createCollider(clDesc, this.rigidBody)
     }
 

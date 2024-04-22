@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import RAPIER from '@dimforge/rapier3d';
 
 import { Timer } from 'three/addons/misc/Timer.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
@@ -133,10 +132,10 @@ export function generateIndexes(geometry) {
     geometry.setIndex(indexAttribute);
 }
 
-export function addGeometryToPhysics(world, rigidbodyDesc, object3d) {
+export function addGeometryToPhysics(rapier, world, rigidbodyDesc, object3d) {
     const rigidBody = world.createRigidBody(rigidbodyDesc)
     const { vertices, indexes } = getGeometryPoints(object3d)
-    const shape = RAPIER.ColliderDesc.trimesh(vertices, indexes)
+    const shape = rapier.ColliderDesc.trimesh(vertices, indexes)
     world.createCollider(shape, rigidBody)
     return rigidBody
 }
