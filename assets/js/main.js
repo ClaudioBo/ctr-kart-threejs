@@ -18,10 +18,10 @@ import Kart from './gameobjects/kart.js';
 import SlideColiseumScene from './scene/slideColiseum.js';
 
 export default class Main {
-    constructor() {
+    constructor(rapierModule) {
         // Basic
         this.renderer;
-        this.rapier
+        this.rapier = rapierModule
         this.stats;
         this.scene;
         this.timer;
@@ -57,7 +57,8 @@ export default class Main {
     }
 
     async setupRapier() {
-        this.rapier = await loadRAPIER()
+        // this.rapier = await loadRAPIER()
+        console.log(this.rapier)
     }
 
     setupBasic() {
@@ -175,4 +176,6 @@ export default class Main {
     }
 }
 
-new Main().initialize()
+import('@dimforge/rapier3d').then(rapierModule => {
+    new Main(rapierModule).initialize()
+})
