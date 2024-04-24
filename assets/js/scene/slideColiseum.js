@@ -13,8 +13,8 @@ export default class SlideColiseumScene extends THREE.Scene {
         // this.background = new THREE.Color(0x65a40f)
 
         // Start Position
-        this.startPointPosition = new THREE.Vector3(16.5, 5, -108.55)
-        this.startPointRotation = new THREE.Vector3(0, Math.PI / -2, 0)
+        this.startPointPosition = new THREE.Vector3(16.5, 1, -108.55)
+        this.startPointAngle = Math.PI / -2
 
         // Physics
         this.world

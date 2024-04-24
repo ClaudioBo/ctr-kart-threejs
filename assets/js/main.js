@@ -43,7 +43,6 @@ export default class Main {
     }
 
     async initialize() {
-        await this.setupRapier()
         this.setupBasic()
         this.setupGUI()
         await this.setupManagers()
@@ -55,10 +54,6 @@ export default class Main {
         this.rapierDebugRenderer = new RapierDebugRenderer(this.scene, this.scene.world)
 
         this.loop()
-    }
-
-    async setupRapier() {
-        // this.rapier = await loadRAPIER()
     }
 
     setupBasic() {
@@ -80,9 +75,7 @@ export default class Main {
         // Test add Kart object
         const kart = new Kart(this)
         kart.position.add(this.scene.startPointPosition)
-        kart.rotation.x = this.scene.startPointRotation.x
-        kart.rotation.y = this.scene.startPointRotation.y
-        kart.rotation.z = this.scene.startPointRotation.z
+        kart.rotation.y = this.scene.startPointAngle
         kart.initializePhysics()
         this.mainKart = kart
 

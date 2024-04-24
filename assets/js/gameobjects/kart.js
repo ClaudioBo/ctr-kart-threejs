@@ -6,7 +6,7 @@ import Tires from './tires.js';
 import TurboExhaust from './turboExhaust.js';
 
 import { degToRad, randInt } from 'three/src/math/MathUtils.js';
-import { CustomTimer } from '../utils.js';
+import { CustomTimer, rotateVectorByQuaternion } from '../utils.js';
 
 export default class Kart extends THREE.Group {
     constructor(main) {
@@ -66,6 +66,8 @@ export default class Kart extends THREE.Group {
 
         // Physics
         this.rigidBody = undefined
+        this.angle = 0
+        this.testRBSize = 0.5
 
         // Runtime
         this.currentModelRotation = 0
@@ -92,19 +94,23 @@ export default class Kart extends THREE.Group {
     }
 
     initializePhysics() {
+        // Copy object3d rotation angle
+        this.angle = this.rotation.y
+
         const rbDesc = RAPIER.RigidBodyDesc.dynamic()
-            .setLinearDamping(0.1)
+            .setLinearDamping(1)
             .setCcdEnabled(true)
             .setTranslation(this.position.x, this.position.y, this.position.z)
             .setRotation({ x: this.quaternion.x, y: this.quaternion.y, z: this.quaternion.z, w: this.quaternion.w })
         this.rigidBody = this.main.scene.world.createRigidBody(rbDesc)
 
-        const clDesc = RAPIER.ColliderDesc.ball(1)
-            .setFriction(0.1)
-            .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Max)
-            .setRestitution(0.6)
-            .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Max);
+        const clDesc = RAPIER.ColliderDesc.ball(this.testRBSize)
         this.main.scene.world.createCollider(clDesc, this.rigidBody)
+
+        let rotation = this.rigidBody.rotation();
+        let direction = new RAPIER.Vector3(0, 0, 10);
+        let rotatedDirection = rotateVectorByQuaternion(direction, rotation);
+        this.rigidBody.setLinvel(rotatedDirection, false);
     }
 
     addKartModel() {
@@ -157,6 +163,8 @@ export default class Kart extends THREE.Group {
     }
 
     addSoundEmitters() {
+        const kartSounds = this.main.assetsManager.kartAssets.kartSounds
+
         const cameraAudioListener = this.main.gameCamera.getObjectByName("audioListener")
         const engineEmitter = new THREE.PositionalAudio(cameraAudioListener);
         const engineJetEmitter = new THREE.PositionalAudio(cameraAudioListener);
@@ -164,8 +172,6 @@ export default class Kart extends THREE.Group {
         const engineHopEmitter = new THREE.PositionalAudio(cameraAudioListener);
         const engineLandEmitter = new THREE.PositionalAudio(cameraAudioListener);
         const engineSkidEmitter = new THREE.PositionalAudio(cameraAudioListener);
-
-        const kartSounds = this.main.assetsManager.kartAssets.kartSounds
 
         engineEmitter.name = "kart_engine01"
         engineJetEmitter.name = "kart_enginejet"
@@ -342,8 +348,9 @@ export default class Kart extends THREE.Group {
     copyPhysicsToObject3D() {
         const bodyTranslation = this.rigidBody.translation()
         const bodyRotation = this.rigidBody.rotation()
-        this.position.set(bodyTranslation.x, bodyTranslation.y, bodyTranslation.z)
-        this.quaternion.set(bodyRotation.x, bodyRotation.y, bodyRotation.z, bodyRotation.w)
+        this.position.set(bodyTranslation.x, bodyTranslation.y - this.testRBSize, bodyTranslation.z)
+        this.rotation.set(0, this.angle, 0)
+        // this.quaternion.set(bodyRotation.x, bodyRotation.y, bodyRotation.z, bodyRotation.w)
     }
 
     update(deltaTime) {
