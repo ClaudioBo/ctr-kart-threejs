@@ -1,233 +1,233 @@
-newmtl 936_508_32_291_4_4
-map_Kd texMed\936_508_32_291_4_4.png
+newmtl 571_288_37_343_4_4
+map_Kd texMed\571_288_37_343_4_4.png
 
-newmtl 648_64_37_240_32_32
-map_Kd texMed\648_64_37_240_32_32.png
+newmtl 552_388_36_433_32_32
+map_Kd texMed\552_388_36_433_32_32.png
 
-newmtl 640_64_37_239_32_32
-map_Kd texMed\640_64_37_239_32_32.png
+newmtl 544_388_36_432_32_32
+map_Kd texMed\544_388_36_432_32_32.png
 
-newmtl 936_508_32_292_4_4
-map_Kd texMed\936_508_32_292_4_4.png
+newmtl 571_288_37_344_4_4
+map_Kd texMed\571_288_37_344_4_4.png
 
-newmtl 969_400_37_208_36_36
-map_Kd texMed\969_400_37_208_36_36.png
+newmtl 999_448_36_341_36_36
+map_Kd texMed\999_448_36_341_36_36.png
 
-newmtl 987_400_37_210_36_36
-map_Kd texMed\987_400_37_210_36_36.png
+newmtl 704_0_36_343_36_36
+map_Kd texMed\704_0_36_343_36_36.png
 
-newmtl 960_400_47_255_36_36
-map_Kd texMed\960_400_47_255_36_36.png
+newmtl 990_448_36_340_36_36
+map_Kd texMed\990_448_36_340_36_36.png
 
-newmtl 978_400_37_209_36_36
-map_Kd texMed\978_400_37_209_36_36.png
+newmtl 1008_448_36_342_36_36
+map_Kd texMed\1008_448_36_342_36_36.png
 
-newmtl 680_64_37_244_32_32
-map_Kd texMed\680_64_37_244_32_32.png
+newmtl 520_420_36_437_32_32
+map_Kd texMed\520_420_36_437_32_32.png
 
-newmtl 672_64_37_243_32_32
-map_Kd texMed\672_64_37_243_32_32.png
+newmtl 512_420_36_436_32_32
+map_Kd texMed\512_420_36_436_32_32.png
 
-newmtl 688_64_37_245_32_32
-map_Kd texMed\688_64_37_245_32_32.png
+newmtl 528_420_36_438_32_32
+map_Kd texMed\528_420_36_438_32_32.png
 
-newmtl 1014_400_37_213_36_36
-map_Kd texMed\1014_400_37_213_36_36.png
+newmtl 731_0_36_346_36_36
+map_Kd texMed\731_0_36_346_36_36.png
 
-newmtl 960_436_37_214_36_36
-map_Kd texMed\960_436_37_214_36_36.png
+newmtl 740_0_36_347_36_36
+map_Kd texMed\740_0_36_347_36_36.png
 
-newmtl 996_400_37_211_36_36
-map_Kd texMed\996_400_37_211_36_36.png
+newmtl 713_0_36_344_36_36
+map_Kd texMed\713_0_36_344_36_36.png
 
-newmtl 1005_400_37_212_36_36
-map_Kd texMed\1005_400_37_212_36_36.png
+newmtl 722_0_36_345_36_36
+map_Kd texMed\722_0_36_345_36_36.png
 
-newmtl 610_160_32_258_24_24
-map_Kd texMed\610_160_32_258_24_24.png
+newmtl 1010_488_37_309_24_24
+map_Kd texMed\1010_488_37_309_24_24.png
 
-newmtl 604_160_32_257_24_24
-map_Kd texMed\604_160_32_257_24_24.png
+newmtl 1004_488_37_308_24_24
+map_Kd texMed\1004_488_37_308_24_24.png
 
-newmtl 664_64_37_242_32_32
-map_Kd texMed\664_64_37_242_32_32.png
+newmtl 568_388_36_435_32_32
+map_Kd texMed\568_388_36_435_32_32.png
 
-newmtl 656_64_37_241_32_32
-map_Kd texMed\656_64_37_241_32_32.png
+newmtl 560_388_36_434_32_32
+map_Kd texMed\560_388_36_434_32_32.png
 
-newmtl 994_352_47_251_40_40
-map_Kd texMed\994_352_47_251_40_40.png
+newmtl 960_448_36_336_40_40
+map_Kd texMed\960_448_36_336_40_40.png
 
-newmtl 696_64_37_246_32_32
-map_Kd texMed\696_64_37_246_32_32.png
+newmtl 536_420_36_439_32_32
+map_Kd texMed\536_420_36_439_32_32.png
 
-newmtl 640_96_37_247_32_32
-map_Kd texMed\640_96_37_247_32_32.png
+newmtl 544_420_36_440_32_32
+map_Kd texMed\544_420_36_440_32_32.png
 
-newmtl 648_96_37_248_32_32
-map_Kd texMed\648_96_37_248_32_32.png
+newmtl 552_420_36_441_32_32
+map_Kd texMed\552_420_36_441_32_32.png
 
-newmtl 656_96_37_249_32_32
-map_Kd texMed\656_96_37_249_32_32.png
+newmtl 560_420_36_442_32_32
+map_Kd texMed\560_420_36_442_32_32.png
 
-newmtl 664_96_37_250_32_32
-map_Kd texMed\664_96_37_250_32_32.png
+newmtl 568_420_36_443_32_32
+map_Kd texMed\568_420_36_443_32_32.png
 
-newmtl 672_96_37_251_32_32
-map_Kd texMed\672_96_37_251_32_32.png
+newmtl 512_452_36_444_32_32
+map_Kd texMed\512_452_36_444_32_32.png
 
-newmtl 640_96_37_252_32_32
-map_Kd texMed\640_96_37_252_32_32.png
+newmtl 544_420_36_445_32_32
+map_Kd texMed\544_420_36_445_32_32.png
 
-newmtl 648_96_37_253_32_32
-map_Kd texMed\648_96_37_253_32_32.png
+newmtl 552_420_36_446_32_32
+map_Kd texMed\552_420_36_446_32_32.png
 
-newmtl 984_352_47_250_40_40
-map_Kd texMed\984_352_47_250_40_40.png
+newmtl 1008_400_36_335_40_40
+map_Kd texMed\1008_400_36_335_40_40.png
 
-newmtl 1004_352_47_252_40_40
-map_Kd texMed\1004_352_47_252_40_40.png
+newmtl 970_448_36_337_40_40
+map_Kd texMed\970_448_36_337_40_40.png
 
-newmtl 936_508_32_357_4_4
-map_Kd texMed\936_508_32_357_4_4.png
+newmtl 571_288_37_409_4_4
+map_Kd texMed\571_288_37_409_4_4.png
 
-newmtl 592_160_39_255_24_24
-map_Kd texMed\592_160_39_255_24_24.png
+newmtl 992_488_37_306_24_24
+map_Kd texMed\992_488_37_306_24_24.png
 
-newmtl 598_160_32_256_24_24
-map_Kd texMed\598_160_32_256_24_24.png
+newmtl 998_488_37_307_24_24
+map_Kd texMed\998_488_37_307_24_24.png
 
-newmtl 664_96_37_254_32_32
-map_Kd texMed\664_96_37_254_32_32.png
+newmtl 568_420_36_447_32_32
+map_Kd texMed\568_420_36_447_32_32.png
 
-newmtl 1014_352_47_254_40_40
-map_Kd texMed\1014_352_47_254_40_40.png
+newmtl 980_448_36_339_40_40
+map_Kd texMed\980_448_36_339_40_40.png
 
-newmtl 832_320_61_510_64_64
-map_Kd texMed\832_320_61_510_64_64.png
+newmtl 864_384_39_281_64_64
+map_Kd texMed\864_384_39_281_64_64.png
 
-newmtl 848_320_61_511_64_64
-map_Kd texMed\848_320_61_511_64_64.png
+newmtl 880_384_39_282_64_64
+map_Kd texMed\880_384_39_282_64_64.png
 
-newmtl 928_256_39_156_64_48
-map_Kd texMed\928_256_39_156_64_48.png
+newmtl 896_352_36_307_64_48
+map_Kd texMed\896_352_36_307_64_48.png
 
-newmtl 912_352_44_253_64_48
-map_Kd texMed\912_352_44_253_64_48.png
+newmtl 944_400_36_314_64_48
+map_Kd texMed\944_400_36_314_64_48.png
 
-newmtl 928_448_45_254_64_48
-map_Kd texMed\928_448_45_254_64_48.png
+newmtl 960_304_36_323_64_48
+map_Kd texMed\960_304_36_323_64_48.png
 
-newmtl 976_304_46_253_64_48
-map_Kd texMed\976_304_46_253_64_48.png
+newmtl 1008_352_36_330_64_48
+map_Kd texMed\1008_352_36_330_64_48.png
 
-newmtl 880_256_60_508_64_64
-map_Kd texMed\880_256_60_508_64_64.png
+newmtl 848_384_38_281_64_64
+map_Kd texMed\848_384_38_281_64_64.png
 
-newmtl 880_256_61_509_64_64
-map_Kd texMed\880_256_61_509_64_64.png
+newmtl 848_384_39_280_64_64
+map_Kd texMed\848_384_39_280_64_64.png
 
-newmtl 816_384_46_213_64_64
-map_Kd texMed\816_384_46_213_64_64.png
+newmtl 848_256_46_254_64_64
+map_Kd texMed\848_256_46_254_64_64.png
 
-newmtl 800_384_46_212_64_64
-map_Kd texMed\800_384_46_212_64_64.png
+newmtl 832_256_46_253_64_64
+map_Kd texMed\832_256_46_253_64_64.png
 
-newmtl 784_384_45_215_64_64
-map_Kd texMed\784_384_45_215_64_64.png
+newmtl 816_448_46_252_64_64
+map_Kd texMed\816_448_46_252_64_64.png
 
-newmtl 768_384_45_212_64_64
-map_Kd texMed\768_384_45_212_64_64.png
+newmtl 800_448_45_253_64_64
+map_Kd texMed\800_448_45_253_64_64.png
 
-newmtl 768_384_54_509_64_64
-map_Kd texMed\768_384_54_509_64_64.png
+newmtl 800_448_34_510_64_64
+map_Kd texMed\800_448_34_510_64_64.png
 
-newmtl 936_508_32_358_4_4
-map_Kd texMed\936_508_32_358_4_4.png
+newmtl 571_288_37_410_4_4
+map_Kd texMed\571_288_37_410_4_4.png
 
-newmtl 696_32_37_238_32_32
-map_Kd texMed\696_32_37_238_32_32.png
+newmtl 536_388_36_431_32_32
+map_Kd texMed\536_388_36_431_32_32.png
 
-newmtl 800_384_54_510_64_64
-map_Kd texMed\800_384_54_510_64_64.png
+newmtl 832_256_34_511_64_64
+map_Kd texMed\832_256_34_511_64_64.png
 
-newmtl 816_384_54_511_64_64
-map_Kd texMed\816_384_54_511_64_64.png
+newmtl 848_256_35_508_64_64
+map_Kd texMed\848_256_35_508_64_64.png
 
-newmtl 856_432_32_268_64_16
-map_Kd texMed\856_432_32_268_64_16.png
+newmtl 896_496_37_319_64_16
+map_Kd texMed\896_496_37_319_64_16.png
 
-newmtl 872_432_32_269_64_16
-map_Kd texMed\872_432_32_269_64_16.png
+newmtl 912_496_37_320_64_16
+map_Kd texMed\912_496_37_320_64_16.png
 
-newmtl 900_496_32_283_16_16
-map_Kd texMed\900_496_32_283_16_16.png
+newmtl 560_484_37_335_16_16
+map_Kd texMed\560_484_37_335_16_16.png
 
-newmtl 992_392_32_343_32_8
-map_Kd texMed\992_392_32_343_32_8.png
+newmtl 560_500_37_395_32_8
+map_Kd texMed\560_500_37_395_32_8.png
 
-newmtl 984_392_32_342_32_8
-map_Kd texMed\984_392_32_342_32_8.png
+newmtl 696_248_37_394_32_8
+map_Kd texMed\696_248_37_394_32_8.png
 
-newmtl 784_384_53_510_64_64
-map_Kd texMed\784_384_53_510_64_64.png
+newmtl 816_448_33_511_64_64
+map_Kd texMed\816_448_33_511_64_64.png
 
-newmtl 994_352_47_253_40_40
-map_Kd texMed\994_352_47_253_40_40.png
+newmtl 960_448_36_338_40_40
+map_Kd texMed\960_448_36_338_40_40.png
 
-newmtl 984_392_32_344_32_8
-map_Kd texMed\984_392_32_344_32_8.png
+newmtl 696_248_37_396_32_8
+map_Kd texMed\696_248_37_396_32_8.png
 
-newmtl 1005_436_37_219_36_36
-map_Kd texMed\1005_436_37_219_36_36.png
+newmtl 722_36_36_352_36_36
+map_Kd texMed\722_36_36_352_36_36.png
 
-newmtl 987_436_37_217_36_36
-map_Kd texMed\987_436_37_217_36_36.png
+newmtl 704_36_36_350_36_36
+map_Kd texMed\704_36_36_350_36_36.png
 
-newmtl 996_436_37_218_36_36
-map_Kd texMed\996_436_37_218_36_36.png
+newmtl 713_36_36_351_36_36
+map_Kd texMed\713_36_36_351_36_36.png
 
-newmtl 978_436_37_216_36_36
-map_Kd texMed\978_436_37_216_36_36.png
+newmtl 758_0_36_349_36_36
+map_Kd texMed\758_0_36_349_36_36.png
 
-newmtl 969_436_37_215_36_36
-map_Kd texMed\969_436_37_215_36_36.png
+newmtl 749_0_36_348_36_36
+map_Kd texMed\749_0_36_348_36_36.png
 
-newmtl 784_448_47_214_64_64
-map_Kd texMed\784_448_47_214_64_64.png
+newmtl 880_256_47_255_64_64
+map_Kd texMed\880_256_47_255_64_64.png
 
-newmtl 800_448_47_215_64_64
-map_Kd texMed\800_448_47_215_64_64.png
+newmtl 832_320_32_508_64_64
+map_Kd texMed\832_320_32_508_64_64.png
 
-newmtl 672_32_37_235_32_32
-map_Kd texMed\672_32_37_235_32_32.png
+newmtl 512_388_36_428_32_32
+map_Kd texMed\512_388_36_428_32_32.png
 
-newmtl 664_32_37_234_32_32
-map_Kd texMed\664_32_37_234_32_32.png
+newmtl 568_356_36_427_32_32
+map_Kd texMed\568_356_36_427_32_32.png
 
-newmtl 680_32_37_236_32_32
-map_Kd texMed\680_32_37_236_32_32.png
+newmtl 520_388_36_429_32_32
+map_Kd texMed\520_388_36_429_32_32.png
 
-newmtl 656_32_37_233_32_32
-map_Kd texMed\656_32_37_233_32_32.png
+newmtl 560_356_36_426_32_32
+map_Kd texMed\560_356_36_426_32_32.png
 
-newmtl 648_32_37_232_32_32
-map_Kd texMed\648_32_37_232_32_32.png
+newmtl 552_356_36_425_32_32
+map_Kd texMed\552_356_36_425_32_32.png
 
-newmtl 640_32_37_231_32_32
-map_Kd texMed\640_32_37_231_32_32.png
+newmtl 544_356_36_424_32_32
+map_Kd texMed\544_356_36_424_32_32.png
 
-newmtl 688_32_37_237_32_32
-map_Kd texMed\688_32_37_237_32_32.png
+newmtl 528_388_36_430_32_32
+map_Kd texMed\528_388_36_430_32_32.png
 
-newmtl 696_0_37_230_32_32
-map_Kd texMed\696_0_37_230_32_32.png
+newmtl 536_356_36_423_32_32
+map_Kd texMed\536_356_36_423_32_32.png
 
-newmtl 622_160_32_260_24_24
-map_Kd texMed\622_160_32_260_24_24.png
+newmtl 512_484_37_311_24_24
+map_Kd texMed\512_484_37_311_24_24.png
 
-newmtl 616_160_32_259_24_24
-map_Kd texMed\616_160_32_259_24_24.png
+newmtl 1016_488_37_310_24_24
+map_Kd texMed\1016_488_37_310_24_24.png
 
 newmtl default
 Map_Kd default.png

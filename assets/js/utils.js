@@ -37,7 +37,7 @@ export function setSpriteFrame(sprite, spritesheetProperties, frameIndex, mirror
 }
 
 
-export async function loadModel(materialPath, objectPath, multiplyVertexColorsMode = 0, materialCallback = undefined) {
+export async function loadModel(materialPath, objectPath, multiplyVertexColorsMode = 0, materialCallback = undefined, scaleGeometry = undefined) {
     // Initialize loaders
     const mtlLoader = new MTLLoader();
     const objLoader = new OBJLoader();
@@ -67,6 +67,9 @@ export async function loadModel(materialPath, objectPath, multiplyVertexColorsMo
             if (child instanceof THREE.Mesh) {
                 if (Array.isArray(child.material)) {
                     child.material.forEach(material => materialCallback(material));
+                }
+                if (scaleGeometry) {
+                    child.geometry.scale(scaleGeometry, scaleGeometry, scaleGeometry)
                 }
                 if (child.geometry?.attributes && multiplyVertexColorsMode) {
                     // multiplyVertexColorsMode = 1: Multiply by 1.6

@@ -54,14 +54,14 @@ export default class TrackAssets {
                 material.map.magFilter = THREE.NearestFilter;
                 material.map.minFilter = THREE.NearestFilter;
             }
-        })
+        }, 2.55994)
     }
 
     async loadTrackPhysics() {
         const objectFolder = 'assets/models/slideColiseum'
-        this.trackGround = await loadModel(null, `${objectFolder}/ground.obj`)
-        this.trackWalls = await loadModel(null, `${objectFolder}/walls.obj`)
-        this.trackDirt = await loadModel(null, `${objectFolder}/dirt.obj`)
+        this.trackGround = await loadModel(null, `${objectFolder}/ground.obj`, undefined, () => { }, 2.55994)
+        this.trackWalls = await loadModel(null, `${objectFolder}/walls.obj`, undefined, () => { }, 2.55994)
+        this.trackDirt = await loadModel(null, `${objectFolder}/dirt.obj`, undefined, () => { }, 2.55994)
         this.trackGround.name = "ground"
         this.trackWalls.name = "walls"
         this.trackDirt.name = "dirt"

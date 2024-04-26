@@ -71,7 +71,7 @@ export default class Kart extends THREE.Group {
         this.currentSpeed = 0
         this.targetSpeed = 0
         this.isGround = false
-        this.characterRigidBodySize = 0.5
+        this.characterRigidBodySize = 0.26
         this.characterRigidBody
         this.characterCollider
 
@@ -105,6 +105,7 @@ export default class Kart extends THREE.Group {
             .setTranslation(this.position.x, this.position.y, this.position.z)
             .setRotation({ x: this.quaternion.x, y: this.quaternion.y, z: this.quaternion.z, w: this.quaternion.w })
         const clDesc = RAPIER.ColliderDesc.ball(this.characterRigidBodySize)
+            .setMass(0.5235987901687622) // Hard-coded mass if setting rigidBodySize to 1
 
         this.characterRigidBody = this.main.scene.world.createRigidBody(rbDesc)
         this.characterCollider = this.main.scene.world.createCollider(clDesc, this.characterRigidBody)

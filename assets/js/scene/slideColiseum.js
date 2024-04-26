@@ -35,7 +35,7 @@ export default class SlideColiseumScene extends THREE.Scene {
     addTrackModel() {
         const trackModel = this.main.assetsManager.trackAssets.trackModel.clone()
         this.add(trackModel)
-
+        
         const trackGround = this.main.assetsManager.trackAssets.trackGround.clone()
         const trackWalls = this.main.assetsManager.trackAssets.trackWalls.clone()
         const trackDirt = this.main.assetsManager.trackAssets.trackDirt.clone()
