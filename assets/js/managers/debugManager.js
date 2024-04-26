@@ -7,6 +7,8 @@ export default class DebugManager {
 
     updateDebugText() {
         const lines = [
+            `isGround: ${this.main.mainKart.isGround}`,
+            `currentAngle: ${this.main.mainKart.currentAngle}`,
             `currentSpeed: ${this.main.mainKart.currentSpeed}`,
             `targetSpeed: ${this.main.mainKart.targetSpeed}`,
             ``,
@@ -17,6 +19,7 @@ export default class DebugManager {
             `modelRotation: ${this.main.mainKart.currentModelRotation}`,
             `frontTireRotation: ${~~this.main.mainKart.getTires().currentFrontTireRotation}`,
             ``,
+            `isDebugEnabled (W): ${this.main.isDebugEnabled}`,
             `isSoundEnabled (S): ${this.main.isSoundEnabled}`,
             `isClose (Q): ${this.main.gameCamera.isClose}`,
             `isMirror (E): ${this.main.gameCamera.isMirror}`,
@@ -31,9 +34,9 @@ export default class DebugManager {
     }
 
     handleKeyDown(key) {
-        if (key == "p") {
-            document.getElementById("overlayImage").hidden = !document.getElementById("overlayImage").hidden
-        }
+        if (key == "p") document.getElementById("overlayImage").hidden = !document.getElementById("overlayImage").hidden
+        if (key == "w") this.main.isDebugEnabled = !this.main.isDebugEnabled
+        
     }
 
     addToGUI() {

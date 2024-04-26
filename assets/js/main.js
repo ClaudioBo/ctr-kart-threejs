@@ -35,6 +35,7 @@ export default class Main {
 
         // General Toggles
         this.isSoundEnabled = false
+        this.isDebugEnabled = true
 
         // Game objects
         this.gameCamera;
@@ -51,7 +52,7 @@ export default class Main {
         this.addGameObjects()
         this.debugManager.addToGUI()
 
-        this.rapierDebugRenderer = new RapierDebugRenderer(this.scene, this.scene.world)
+        this.rapierDebugRenderer = new RapierDebugRenderer(this)
 
         this.loop()
     }

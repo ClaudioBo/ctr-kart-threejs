@@ -36,50 +36,6 @@ export function setSpriteFrame(sprite, spritesheetProperties, frameIndex, mirror
     }
 }
 
-export function crossProduct(v1, v2) {
-    return new RAPIER.Vector3(
-        v1.y * v2.z - v1.z * v2.y,
-        v1.z * v2.x - v1.x * v2.z,
-        v1.x * v2.y - v1.y * v2.x
-    );
-}
-
-export function scaleVector(vector, scalar) {
-    return new RAPIER.Vector3(
-        vector.x * scalar,
-        vector.y * scalar,
-        vector.z * scalar
-    );
-}
-
-export function addVectors(v1, v2) {
-    return new RAPIER.Vector3(
-        v1.x + v2.x,
-        v1.y + v2.y,
-        v1.z + v2.z
-    );
-}
-
-export function rotateVectorByQuaternion(vector, quaternion) {
-    // Quaternion-vector multiplication
-    let qvec = new RAPIER.Vector3(quaternion.x, quaternion.y, quaternion.z);
-    let uv = crossProduct(qvec, vector);
-    let uuv = crossProduct(qvec, uv);
-    
-    // Calculate terms used in the rotation
-    let uvScale = 2.0 * quaternion.w;
-    let uuvScale = 2.0;
-    
-    // Apply the terms to the calculations
-    uv = scaleVector(uv, uvScale);
-    uuv = scaleVector(uuv, uuvScale);
-    
-    // Apply the rotations to the original vector
-    let result = addVectors(vector, addVectors(uv, uuv));
-    
-    return result;
-}
-
 
 export async function loadModel(materialPath, objectPath, multiplyVertexColorsMode = 0, materialCallback = undefined) {
     // Initialize loaders

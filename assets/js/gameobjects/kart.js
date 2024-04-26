@@ -1,12 +1,12 @@
-import * as THREE from 'three';
 import * as RAPIER from '@dimforge/rapier3d-compat';
+import * as THREE from 'three';
 
 import Smoke from './smoke.js';
 import Tires from './tires.js';
 import TurboExhaust from './turboExhaust.js';
 
 import { degToRad, randInt } from 'three/src/math/MathUtils.js';
-import { CustomTimer, rotateVectorByQuaternion } from '../utils.js';
+import { CustomTimer } from '../utils.js';
 
 export default class Kart extends THREE.Group {
     constructor(main) {
@@ -25,21 +25,23 @@ export default class Kart extends THREE.Group {
             JUMP_COYOTE_MS: 160, //0x3f4 (10)
             GRAVITY: 900, //0x416 (56.2500)
             JUMP_FORCE: 4596, //0x418 (287.2500)
+            TURN_ANGLE_DEGREE: 32,
+            TURN_ANGLE_RATE: 0.03,
         }
         this.ACCELERATION_PROPERTIES = {
-            ACCELERATION: 480, // 0x428, each frame it sums to currentSpeed
-            DECELERATION: 130, // checked value frame by frame
+            ACCELERATION: 30, // 0x428, each frame it sums to currentSpeed
+            DECELERATION: 8.125, // checked value frame by frame
             ACCELERATION_INCREMENT_INTERVAL: 0.03, // 1fps / 30fps
             // ACCELERATION_RESERVES: 1152, // 0x42A, idk
-            SPEED_BASE: 13_140, // 0x42C, max speed without doing turbos
-            SPEED_BASE_SINGLETURBO: 2048, // 0x430
-            SPEED_EACH_TURBO: 512,
-            SLIDECHARGE_INCREMENT: 32,
+            SPEED_BASE: 821.25, // 0x42C, max speed without doing turbos
+            SPEED_BASE_SINGLETURBO: 128, // 0x430
+            SPEED_EACH_TURBO: 32,
+            SLIDECHARGE_INCREMENT: 2,
             SLIDECHARGE_INCREMENT_MS: 0.33,
-            SLIDECHARGE_MIN_TURBO: 528,
-            SLIDECHARGE_MAX_VALUE: 960,
+            SLIDECHARGE_MIN_TURBO: 33,
+            SLIDECHARGE_MAX_VALUE: 60,
             DETUNE_START: -1100,
-            DETUNE_MODIFIER: 0.12
+            DETUNE_MODIFIER: 1.95
         }
         this.DIRECTION_ENUMS = {
             LEFT: -1,
@@ -65,17 +67,19 @@ export default class Kart extends THREE.Group {
         this.steerDirection = this.DIRECTION_ENUMS.NONE
 
         // Physics
-        this.rigidBody = undefined
-        this.angle = 0
-        this.testRBSize = 0.5
+        this.currentAngle = 0
+        this.currentSpeed = 0
+        this.targetSpeed = 0
+        this.isGround = false
+        this.characterRigidBodySize = 0.5
+        this.characterRigidBody
+        this.characterCollider
 
         // Runtime
         this.currentModelRotation = 0
         this.targetModelRotation = 0
         this.currentSmokes = []
         this.currentDetune = 0
-        this.currentSpeed = 0
-        this.targetSpeed = 0 // 0x39C, this is the max speed that it tries to reach
         this.currentSlideCharge = 0
         this.currentReserves = 0
 
@@ -94,23 +98,16 @@ export default class Kart extends THREE.Group {
     }
 
     initializePhysics() {
-        // Copy object3d rotation angle
-        this.angle = this.rotation.y
+        this.currentAngle = this.rotation.y
 
         const rbDesc = RAPIER.RigidBodyDesc.dynamic()
-            .setLinearDamping(1)
             .setCcdEnabled(true)
             .setTranslation(this.position.x, this.position.y, this.position.z)
             .setRotation({ x: this.quaternion.x, y: this.quaternion.y, z: this.quaternion.z, w: this.quaternion.w })
-        this.rigidBody = this.main.scene.world.createRigidBody(rbDesc)
+        const clDesc = RAPIER.ColliderDesc.ball(this.characterRigidBodySize)
 
-        const clDesc = RAPIER.ColliderDesc.ball(this.testRBSize)
-        this.main.scene.world.createCollider(clDesc, this.rigidBody)
-
-        let rotation = this.rigidBody.rotation();
-        let direction = new RAPIER.Vector3(0, 0, 10);
-        let rotatedDirection = rotateVectorByQuaternion(direction, rotation);
-        this.rigidBody.setLinvel(rotatedDirection, false);
+        this.characterRigidBody = this.main.scene.world.createRigidBody(rbDesc)
+        this.characterCollider = this.main.scene.world.createCollider(clDesc, this.characterRigidBody)
     }
 
     addKartModel() {
@@ -299,6 +296,57 @@ export default class Kart extends THREE.Group {
         this.currentSpeed = Math.min(Math.max(this.currentSpeed, 0), this.ACCELERATION_PROPERTIES.SPEED_BASE);
     }
 
+    computePhysics(deltaTime) {
+        // check if grounded
+        const groundRaycast = this.main.scene.world.castRay(
+            new RAPIER.Ray(this.characterRigidBody.translation(), { x: 0, y: -1, z: 0 }),
+            1,
+            false,
+            undefined,
+            undefined,
+            undefined,
+            this.characterRigidBody,
+        )
+        this.isGround = groundRaycast !== null
+
+        // steering angle
+        const rotationRate = (this.PHYSICS_PROPERTIES.TURN_ANGLE_DEGREE / this.PHYSICS_PROPERTIES.TURN_ANGLE_RATE)
+        const angleChange = rotationRate * this.steerDirection * deltaTime / 1000
+        this.currentAngle -= this.currentSpeed ? angleChange : 0;
+
+        // drifting controls
+
+        // acceleration and deceleration logic
+        this.doSpeedLogic(deltaTime)
+
+        // impulse vector
+        const test = this.currentSpeed * 0.01
+        const characterImpulse = new THREE.Vector3(0, 0, test)
+
+        // drifting steering
+
+        // copy angle to impulse vector
+        const currentAngleQuat = new THREE.Quaternion().setFromAxisAngle(this.up, this.currentAngle)
+        characterImpulse.applyQuaternion(currentAngleQuat)
+
+        // jump
+
+        // apply impulse vector
+        if (characterImpulse.length() > 0) {
+            this.characterRigidBody.applyImpulse(characterImpulse, true)
+        }
+
+        // damping
+        this.characterRigidBody.applyImpulse({
+            x: -this.characterRigidBody.linvel().x * 0.4,
+            y: 0,
+            z: -this.characterRigidBody.linvel().z * 0.4,
+        }, true)
+
+        // rotation
+        this.doModelRotation(deltaTime)
+    }
+
     doKartSound() {
         const kartEngineEmitter = this.getObjectByName("kart_engine01")
         if (!this.main.isSoundEnabled) {
@@ -346,14 +394,18 @@ export default class Kart extends THREE.Group {
     }
 
     copyPhysicsToObject3D() {
-        const bodyTranslation = this.rigidBody.translation()
-        const bodyRotation = this.rigidBody.rotation()
-        this.position.set(bodyTranslation.x, bodyTranslation.y - this.testRBSize, bodyTranslation.z)
-        this.rotation.set(0, this.angle, 0)
-        // this.quaternion.set(bodyRotation.x, bodyRotation.y, bodyRotation.z, bodyRotation.w)
+        const bodyTranslation = this.characterRigidBody.translation()
+        this.position.set(bodyTranslation.x, bodyTranslation.y - this.characterRigidBodySize, bodyTranslation.z)
+        this.rotation.set(0, this.currentAngle, 0)
     }
 
     update(deltaTime) {
+        // Compute physics
+        this.computePhysics(deltaTime)
+
+        // Sound
+        this.doKartSound()
+
         // Copy from Physics
         this.copyPhysicsToObject3D()
 
@@ -366,15 +418,6 @@ export default class Kart extends THREE.Group {
         //Smoke
         this.currentSmokes.forEach(smoke => smoke.update())
         if (this.isSmokeVisible) this.doSmokeSpawning()
-
-        // Speed logic
-        this.doSpeedLogic(deltaTime)
-
-        // Model rotation depending on speed
-        this.doModelRotation(deltaTime)
-
-        // Sound
-        this.doKartSound()
     }
 
 }

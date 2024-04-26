@@ -29,7 +29,7 @@ export default class SlideColiseumScene extends THREE.Scene {
     }
 
     initializePhysics() {
-        this.world = new RAPIER.World({ x: 0.0, y: -9.81, z: 0.0 })
+        this.world = new RAPIER.World({ x: 0.0, y: -9, z: 0.0 })
     }
 
     addTrackModel() {
