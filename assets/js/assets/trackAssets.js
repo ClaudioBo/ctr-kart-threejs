@@ -23,9 +23,9 @@ export default class TrackAssets {
             this.trackModel
         ]
             .forEach(track => {
-                const botPathEasy = track.getObjectByName("BotPathEasy")
-                const botPathMedium = track.getObjectByName("BotPathMedium")
-                const botPathHard = track.getObjectByName("BotPathHard")
+                const botPathEasy = track.getObjectByName("BotPath_Easy")
+                const botPathMedium = track.getObjectByName("BotPath_Medium")
+                const botPathHard = track.getObjectByName("BotPath_Hard")
                 if (botPathEasy) botPathEasy.visible = false
                 if (botPathMedium) botPathMedium.visible = false
                 if (botPathHard) botPathHard.visible = false

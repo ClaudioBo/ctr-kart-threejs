@@ -64,6 +64,11 @@ export async function loadModel(materialPath, objectPath, multiplyVertexColorsMo
     // traverse was needed because iterating with forEach didn't work haha
     if (materialCallback)
         model.traverse(child => {
+            if (child instanceof THREE.LineSegments) {
+                if (scaleGeometry) {
+                    child.geometry.scale(scaleGeometry, scaleGeometry, scaleGeometry)
+                }
+            }
             if (child instanceof THREE.Mesh) {
                 if (Array.isArray(child.material)) {
                     child.material.forEach(material => materialCallback(material));
