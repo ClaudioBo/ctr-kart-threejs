@@ -110,12 +110,14 @@ newmtl 880_384_39_282_64_64
 map_Kd texMed\880_384_39_282_64_64.png
 
 newmtl 896_352_36_307_64_48
+d 0.99
 map_Kd texMed\896_352_36_307_64_48.png
 
 newmtl 944_400_36_314_64_48
 map_Kd texMed\944_400_36_314_64_48.png
 
 newmtl 960_304_36_323_64_48
+d 0.99
 map_Kd texMed\960_304_36_323_64_48.png
 
 newmtl 1008_352_36_330_64_48
@@ -230,4 +232,5 @@ newmtl 1016_488_37_310_24_24
 map_Kd texMed\1016_488_37_310_24_24.png
 
 newmtl default
+d 0
 Map_Kd default.png
