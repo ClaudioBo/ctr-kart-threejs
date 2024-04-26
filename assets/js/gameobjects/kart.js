@@ -1,11 +1,11 @@
 import * as RAPIER from '@dimforge/rapier3d-compat';
 import * as THREE from 'three';
 
-import Smoke from './smoke.js';
+import SmokeHolder from './smokeHolder.js';
 import Tires from './tires.js';
 import TurboExhaust from './turboExhaust.js';
 
-import { degToRad, randInt } from 'three/src/math/MathUtils.js';
+import { degToRad } from 'three/src/math/MathUtils.js';
 import { CustomTimer } from '../utils.js';
 
 export default class Kart extends THREE.Group {
@@ -15,8 +15,8 @@ export default class Kart extends THREE.Group {
 
         // Constants
         this.KART_PROPERTIES = {
-            VERTICAL_ROTATION_EXHAUST_OFFSET: 3.75,
-            SMOKE_SPAWN_INTERVAL: 0.03, // Spawns each frame (1 / 30fps = 0.0333333333333333)
+            LEFT_EXHAUST_POSITION: new THREE.Vector3(0.2835, 0.715, -0.783),
+            RIGHT_EXHAUST_POSITION: new THREE.Vector3(-0.2835, 0.715, -0.783),
             MODEL_ROTATION_TURNING_TIME: 0.5, // (15frames/30fps)
             MODEL_ROTATION_TURNING_ANGLE: 30 // When drifting, its multiplied by 2
         }
@@ -50,12 +50,9 @@ export default class Kart extends THREE.Group {
         }
 
         // Timers
-        this.smokeSpawnTimer = new CustomTimer()
         this.speedLogicTimer = new CustomTimer()
 
         // Toggles
-        this.isSmokeVisible = true
-        this.isSmokeDark = false
         this.isTurboVisible = true
 
         // Keys pressed
@@ -78,7 +75,6 @@ export default class Kart extends THREE.Group {
         // Runtime
         this.currentModelRotation = 0
         this.targetModelRotation = 0
-        this.currentSmokes = []
         this.currentDetune = 0
         this.currentSlideCharge = 0
         this.currentReserves = 0
@@ -94,6 +90,7 @@ export default class Kart extends THREE.Group {
         this.addKartTires()
         this.addTurboExhaust()
         this.addShadowPlane()
+        this.addSmokeHolder()
         this.addSoundEmitters()
     }
 
@@ -115,18 +112,6 @@ export default class Kart extends THREE.Group {
         const kartModelCloned = this.main.assetsManager.kartAssets.kartModel.clone()
         kartModelCloned.name = "kartModel"
         this.add(kartModelCloned)
-
-        // Calculate exhausts and add to Kart
-        const leftExhaustMarker = new THREE.Object3D();
-        const rightExhaustMarker = new THREE.Object3D();
-        leftExhaustMarker.name = "leftExhaustMarker"
-        rightExhaustMarker.name = "rightExhaustMarker"
-        leftExhaustMarker.position.set(0.2835, 0.715, -0.783)
-        rightExhaustMarker.position.set(-0.2835, 0.715, -0.783)
-        leftExhaustMarker.rotation.x = this.KART_PROPERTIES.VERTICAL_ROTATION_EXHAUST_OFFSET
-        rightExhaustMarker.rotation.x = this.KART_PROPERTIES.VERTICAL_ROTATION_EXHAUST_OFFSET
-        kartModelCloned.add(leftExhaustMarker)
-        kartModelCloned.add(rightExhaustMarker)
     }
 
     addKartTires() {
@@ -134,9 +119,7 @@ export default class Kart extends THREE.Group {
     }
 
     addTurboExhaust() {
-        const leftMarker = this.getObjectByName("leftExhaustMarker")
-        const rightMarker = this.getObjectByName("rightExhaustMarker")
-        this.add(new TurboExhaust(this.main, leftMarker, rightMarker))
+        this.add(new TurboExhaust(this.main, this))
     }
 
     addShadowPlane() {
@@ -158,6 +141,11 @@ export default class Kart extends THREE.Group {
         shadowPlane.name = "shadow"
 
         this.add(shadowPlane)
+    }
+
+    addSmokeHolder() {
+        this.smokeHolder = new SmokeHolder(this.main, this)
+        this.add(this.smokeHolder)
     }
 
     addSoundEmitters() {
@@ -220,55 +208,8 @@ export default class Kart extends THREE.Group {
         return this.getObjectByName("shadow")
     }
 
-    doSmokeSpawning() {
-        this.smokeSpawnTimer.update()
-        if (this.smokeSpawnTimer.getElapsed() < this.KART_PROPERTIES.SMOKE_SPAWN_INTERVAL) return
-        this.smokeSpawnTimer.resetAll()
-
-        const leftMarker = this.getObjectByName("leftExhaustMarker")
-        const rightMarker = this.getObjectByName("rightExhaustMarker")
-
-        const leftExhaustPosition = leftMarker.getWorldPosition(new THREE.Vector3())
-        const rightExhaustPosition = rightMarker.getWorldPosition(new THREE.Vector3())
-
-        // Get kart's rotation relative to world
-        const leftExhaustRotation = leftMarker.getWorldQuaternion(new THREE.Quaternion());
-        const rightExhaustRotation = rightMarker.getWorldQuaternion(new THREE.Quaternion());
-
-        // Clone the smokes
-        const smokeLeft = new Smoke(this.main, this)
-        const smokeRight = new Smoke(this.main, this)
-
-        // Set position
-        smokeLeft.position.copy(leftExhaustPosition)
-        smokeRight.position.copy(rightExhaustPosition)
-
-        // Set rotation
-        smokeLeft.setRotationFromQuaternion(leftExhaustRotation);
-        smokeRight.setRotationFromQuaternion(rightExhaustRotation);
-
-        // TODO: New kart scaling and current rotation fucks up this, fix later
-        // // Offset the position a little bit up because smoke 1st frame is offset
-        // // and then a little bit far away from the exhaust bc its like that in the real game
-        // const OFFSET_VECTOR = new THREE.Vector3(0, 0.1, -0.05).getWorldPosition(new THREE.Vector3())
-        // smokeLeft.position.add(OFFSET_VECTOR)
-        // smokeRight.position.add(OFFSET_VECTOR)
-
-        // Random speed value & 50% chance to invert the speed
-        let randomSpeed = randInt(1, 2)
-        if (Math.random() < 0.5) randomSpeed *= -1
-
-        // Apply rotation to the smokes
-        smokeLeft.rotateSpeed = randomSpeed
-        smokeRight.rotateSpeed = randomSpeed
-
-        // Added to array to apply logic to it
-        this.currentSmokes.push(smokeLeft)
-        this.currentSmokes.push(smokeRight)
-
-        // Add smokes to scene
-        this.main.scene.add(smokeLeft)
-        this.main.scene.add(smokeRight)
+    getSmokesHolder() {
+        return this.getObjectByName("smokeHolder")
     }
 
     handleKeyDown(key) {
@@ -343,9 +284,6 @@ export default class Kart extends THREE.Group {
             y: 0,
             z: -this.characterRigidBody.linvel().z * 0.4,
         }, true)
-
-        // rotation
-        this.doModelRotation(deltaTime)
     }
 
     doKartSound() {
@@ -392,9 +330,10 @@ export default class Kart extends THREE.Group {
         this.getTires().rotation.y = newRotationValue;
         this.getTurboExhaust().rotation.y = newRotationValue;
         this.getShadow().rotation.z = -newRotationValue;
+        this.getSmokesHolder().rotation.y = newRotationValue;
     }
 
-    copyPhysicsToObject3D() {
+    copyPhysicsPositionsToObject3D() {
         const bodyTranslation = this.characterRigidBody.translation()
         this.position.set(bodyTranslation.x, bodyTranslation.y - this.characterRigidBodySize, bodyTranslation.z)
         this.rotation.set(0, this.currentAngle, 0)
@@ -404,11 +343,14 @@ export default class Kart extends THREE.Group {
         // Compute physics
         this.computePhysics(deltaTime)
 
+        // Model Rotation
+        this.doModelRotation(deltaTime)
+
         // Sound
         this.doKartSound()
 
         // Copy from Physics
-        this.copyPhysicsToObject3D()
+        this.copyPhysicsPositionsToObject3D()
 
         // Tires
         this.getTires().update(deltaTime)
@@ -416,9 +358,8 @@ export default class Kart extends THREE.Group {
         // Turbo exhaust
         if (this.isTurboVisible) this.getObjectByName("turboExhausts").update()
 
-        //Smoke
-        this.currentSmokes.forEach(smoke => smoke.update())
-        if (this.isSmokeVisible) this.doSmokeSpawning()
+        // Smoke
+        this.smokeHolder.update()
     }
 
 }

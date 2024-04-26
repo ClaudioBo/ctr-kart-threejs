@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { CustomTimer } from '../utils.js';
 
 export default class TurboExhaust extends THREE.Group {
-    constructor(main, leftPos, rightPos) {
+    constructor(main, kart) {
         super()
 
         this.TURBO_ANIMATION_SPEED = 0.03
@@ -19,12 +19,13 @@ export default class TurboExhaust extends THREE.Group {
         this.TURBO_FIRE_SCALE_XLARGE_RATIO = 1 // Turbo pad and USF is 8 (= 4 / 4)
 
         this.main = main
+        this.kart = kart
         this.name = "turboExhausts"
         this.currentFrame = 0
 
         this.timer;
 
-        this.initialize(leftPos, rightPos)
+        this.initialize()
     }
 
     createTurboObject() {
@@ -41,7 +42,7 @@ export default class TurboExhaust extends THREE.Group {
         return turboGroup
     }
 
-    initialize(leftPos, rightPos) {
+    initialize() {
         const leftExhaustModel = this.createTurboObject()
         const rightExhaustModel = this.createTurboObject()
 
@@ -51,8 +52,8 @@ export default class TurboExhaust extends THREE.Group {
         leftExhaustModel.visible = false
         rightExhaustModel.visible = false
 
-        leftExhaustModel.position.copy(leftPos.position)
-        rightExhaustModel.position.copy(rightPos.position)
+        leftExhaustModel.position.copy(this.kart.KART_PROPERTIES.LEFT_EXHAUST_POSITION)
+        rightExhaustModel.position.copy(this.kart.KART_PROPERTIES.RIGHT_EXHAUST_POSITION)
         rightExhaustModel.scale.x = -1 // Mirror
 
         this.timer = new CustomTimer()
