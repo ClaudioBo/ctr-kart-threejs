@@ -33,7 +33,7 @@ export default class TrackAssets {
     }
 
     async loadTrackSky() {
-        const objectPath = 'assets/models/slideColiseum/data_sky.obj'
+        const objectPath = 'assets/models/tracks/slideColiseum/data_sky.obj'
 
         this.trackSky = await loadModel(null, objectPath, 1, material => {
             material.vertexColors = true
@@ -45,8 +45,8 @@ export default class TrackAssets {
     }
 
     async loadTrackModel() {
-        const materialPath = 'assets/models/slideColiseum/data_Med.mtl'
-        const objectPath = 'assets/models/slideColiseum/data_Med.obj'
+        const materialPath = 'assets/models/tracks/slideColiseum/data_Med.mtl'
+        const objectPath = 'assets/models/tracks/slideColiseum/data_Med.obj'
 
         this.trackModel = await loadModel(materialPath, objectPath, 2, material => {
             material.vertexColors = true
@@ -58,7 +58,7 @@ export default class TrackAssets {
     }
 
     async loadTrackPhysics() {
-        const objectFolder = 'assets/models/slideColiseum'
+        const objectFolder = 'assets/models/tracks/slideColiseum'
         this.trackGround = await loadModel(null, `${objectFolder}/ground.obj`, undefined, () => { }, 2.55994)
         this.trackWalls = await loadModel(null, `${objectFolder}/walls.obj`, undefined, () => { }, 2.55994)
         this.trackDirt = await loadModel(null, `${objectFolder}/dirt.obj`, undefined, () => { }, 2.55994)
